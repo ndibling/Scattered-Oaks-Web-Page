@@ -12,6 +12,7 @@ Live domain (once deployed): **scattered-oaks-zebu.com**
 |---|---|
 | [Requirements Specification (v2.1)](./docs/Scattered%20Oaks%20Farm%20Requirements%20v2.docx) | What the site must do — public site behavior, the Administrator CMS, security/password policy, the deployment approval gate, and the design-iteration workflow. Combines the original owner-authored requirements with everything defined in the approved Claude Design prototype, plus additional requirements identified during analysis (each tagged `[PDF]` / `[DESIGN]` / `[ADDED]` for provenance). |
 | [Software Design Description (v1.0)](./docs/Scattered%20Oaks%20Farm%20Software%20Design%20Description.docx) | How it will be built — concrete architecture, frontend/backend component design, the D1 data model, the full API contract, security design, the CI/CD pipeline, testing strategy, and a step-by-step manual configuration checklist for everything that has to be set up by hand in GitHub, Cloudflare, and Resend before the pipeline can run. |
+| [Development Plan (v1.0)](./docs/Development-Plan.md) | The order to build it in — milestones M1–M11 turning the SDD into an actionable sequence, split into a local-only build track and a manual cloud/GitHub setup track that only converge at first deploy. |
 
 Read the SDD's **Section 10 (Manual Configuration Checklist)** before any implementation work begins — it's the ordered, one-time setup (branch protection, GitHub Environments, Cloudflare resources, DNS, Turnstile, Resend) that everything else depends on.
 
