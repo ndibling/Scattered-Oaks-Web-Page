@@ -1,0 +1,341 @@
+# Scattered Oaks Farms — Software Design Description (SDD)
+
+**Version 1.1 (living document)** — originally authored as Version 1.0, July 19, 2026, as a Word document (`Scattered Oaks Farm Software Design Description.docx`, preserved in this folder as the frozen v1 baseline). This Markdown version is the living source of truth going forward: it is updated whenever implementation changes the actual design, per the workflow in `Development-Plan.md`.
+
+This document describes the technical design of the Scattered Oaks Farms website, implementing the requirements defined in `Requirements.md` (formerly "Scattered Oaks Farms Website Requirements Specification" v2.1). It carries forward that document's provenance tags `[PDF]` / `[DESIGN]` / `[ADDED]` where a design decision traces directly to a specific requirement, and uses `[MANUAL SETUP]` for any one-time configuration step a human must perform by hand in GitHub, Cloudflare, or Resend — none of this can be scripted by CI on a brand-new account. Every `[MANUAL SETUP]` item also appears, in executable checklist form, in Section 10. `[AMENDED]` marks a design change made after implementation began (see change log at the bottom).
+
+## Table of Contents
+1. [Introduction](#1-introduction)
+2. [System Architecture Overview](#2-system-architecture-overview)
+3. [Frontend Design](#3-frontend-design)
+4. [Backend / API Design](#4-backend--api-design)
+5. [Data Design](#5-data-design)
+6. [Security Design](#6-security-design)
+7. [CI/CD Pipeline Design](#7-cicd-pipeline-design)
+8. [Testing Strategy Design](#8-testing-strategy-design)
+9. [Deployment & Infrastructure Design](#9-deployment--infrastructure-design)
+10. [Manual Configuration Checklist](#10-manual-configuration-checklist)
+11. [Traceability Matrix](#11-traceability-matrix)
+- [Appendix A: Glossary](#appendix-a-glossary)
+- [Appendix B: Diagram Index](#appendix-b-diagram-index)
+- [Change Log](#change-log)
+
+## 1. Introduction
+
+### 1.1 Purpose
+This Software Design Description (SDD) specifies how the Scattered Oaks Farms website will be built: concrete architecture, frontend/backend component design, data model, API contracts, security design, CI/CD pipeline, and testing strategy. It is the design-level counterpart to the requirements document — the requirements say what the system must do; this document says how.
+
+### 1.2 Scope
+Covers the public marketing/animal-listing site, the Administrator CMS, the Cloudflare-native backend, the GitHub/Cloudflare CI-CD pipeline with its approval gate, and the manual one-time setup required on GitHub, Cloudflare, and Resend before the pipeline can run end to end.
+
+### 1.3 References
+- Scattered Oaks Farms Website Requirements Specification (`Requirements.md`, formerly v2.1 Word document).
+- Claude Design project "Scattered Oaks Farms website design," project ID `a8493b50-0e7e-46e9-a0ef-930263d1a0c8`, file `Scattered Oaks Farms.dc.html`.
+- `Development-Plan.md` — the build-sequencing counterpart to this document.
+
+### 1.4 Acronyms & Definitions
+
+| Term | Meaning |
+|---|---|
+| SDD | Software Design Description — this document. |
+| DBA | "Doing Business As" — Scattered Oaks Farms operates as a DBA of Heather Johnston. |
+| IMZA | International Miniature Zebu Association — the breed registry issuing an animal's registration number. |
+| D1 | Cloudflare's managed, serverless SQLite-compatible database product. |
+| R2 | Cloudflare's S3-compatible object storage product, used here for images/video. |
+| Workers | Cloudflare's serverless compute platform, used here for the API/backend. |
+| Turnstile | Cloudflare's free CAPTCHA alternative for bot/spam protection. |
+| Wrangler | Cloudflare's CLI/deploy tool for Workers and Pages, used in the CI pipeline. |
+| PBKDF2 | Password-Based Key Derivation Function 2 — the password-hashing algorithm used, via the Workers-native WebCrypto API. |
+| ER diagram | Entity-Relationship diagram — visualizes database tables and how they relate. |
+| SPA | Single-Page Application — used here to describe the client-rendered `/admin` section. |
+| CI/CD | Continuous Integration / Continuous Deployment — the automated build-test-deploy pipeline. |
+
+## 2. System Architecture Overview
+
+*Figure 1 — System architecture / context diagram.*
+
+The entire system runs on Cloudflare, deployed from a single GitHub repository, per the owner's constraint that everything live on one platform with no separate hosting bill. `[PDF]`
+
+### 2.1 Technology Stack
+
+| Layer | Technology | Purpose |
+|---|---|---|
+| Frontend | Astro + React/Preact islands | Static-first site generation with small hydrated interactive components (filters, lightboxes, contact form, admin app). |
+| Hosting / CDN | Cloudflare Pages | Static hosting, global edge CDN, automatic per-PR preview deployments. |
+| API / Compute | Cloudflare Workers | Serverless API: authentication, animal/content/settings CRUD, contact form, uploads. |
+| Database | Cloudflare D1 | SQLite-compatible relational storage for all structured data. |
+| Object Storage | Cloudflare R2 | Animal photo/video storage. |
+| Bot Protection | Cloudflare Turnstile | Blocks automated spam on the public contact form. |
+| Transactional Email | Resend | Password-reset and new-admin-invite emails. |
+| CI/CD | GitHub Actions + Wrangler CLI | Build, test, and deploy pipeline. |
+| Version Control | GitHub | Source repository, pull-request review, Environments approval gate. |
+| Testing | Vitest (+ `@cloudflare/vitest-pool-workers`), Playwright | Unit/integration tests against the real Workers runtime; end-to-end browser tests. |
+
+### 2.2 Environment Topology
+
+| Environment | Trigger | Targets |
+|---|---|---|
+| `preview` | Every pull request | Preview Cloudflare Pages deployment + preview Worker (`scattered-oaks-api-preview`) + preview D1 database (`scattered-oaks-db-preview`), seeded with sample data. |
+| `production` | Merge to `main`, gated by required-reviewer approval | Production Worker (`scattered-oaks-api`) + production D1 (`scattered-oaks-db`) + R2 bucket, bound to `scattered-oaks-zebu.com`. |
+
+## 3. Frontend Design
+Astro is used as the site generator: pages are static HTML by default (fast, SEO-friendly per requirements §8.4) with only the interactive pieces — filter tabs, the animal/gallery lightboxes, the contact form, and the entire `/admin` app — hydrated as small React/Preact "islands." This keeps the public site's shipped JavaScript minimal while still supporting the fully dynamic Administrator experience.
+
+### 3.1 Route Map
+
+| Route | Purpose | Rendering |
+|---|---|---|
+| `/` | Public single-page site: Hero, About, Available Animals, Gallery, Contact (anchor-navigated, matching the approved design). | Static (build-time) + hydrated islands for interactivity. |
+| `/admin/login` | Administrator login form. | Hydrated island. |
+| `/admin` | Admin dashboard landing. | Client-rendered, auth-gated. |
+| `/admin/animals` | Animal list, add/edit/delete, reorder. | Client-rendered, auth-gated. |
+| `/admin/content` | Edit site text fields in place. | Client-rendered, auth-gated. |
+| `/admin/settings` | Toggle `showPublicPrices` / `galleryStyle`. | Client-rendered, auth-gated. |
+| `/admin/users` | Manage Administrator accounts. | Client-rendered, auth-gated. |
+| `/admin/reset-password` | Set a new password from an emailed reset link. | Hydrated island; public route, but requires a valid token in the URL. |
+
+### 3.2 Component Breakdown
+Public site components (visual/behavioral spec sourced from the Claude Design prototype): `[DESIGN]`
+- Header/Nav, Hero, About, AnimalGrid + FilterTabs, AnimalCard, AnimalDetailModal (photo/video carousel), Gallery + GalleryLightbox, ContactForm, Footer — one-to-one with the sections cataloged in requirements §6.2.
+
+Administrator components (new; not present in the public-only design prototype): `[ADDED]`
+- AdminLogin, AdminShell (nav + auth guard), AnimalEditor (create/edit form + media manager), ContentEditor (in-place text fields), SiteSettingsPanel, AdminUserManager, AuditLogView.
+
+### 3.3 Shared Design Tokens
+A single tokens module (colors as OKLCH values, the Quicksand/Nunito font stack, spacing and radius conventions) is extracted directly from the Claude Design source and imported by every component, public or admin. This is the one place a future Design Iteration Workflow update (requirements §6.4) needs to touch to restyle the whole site consistently. `[DESIGN]`
+
+### 3.4 Data Fetching
+Public pages and the admin app call the Workers API for animals, gallery photos, site text, and settings — nothing is hardcoded at build time. This means an Administrator's edit appears on the live site immediately, with no rebuild/redeploy required. `[ADDED]`
+
+## 4. Backend / API Design
+The Workers API is organized into route modules — auth, animals, content, settings, admins, contact, uploads — behind a small router, with shared middleware for session authentication, rate limiting, and audit logging on any state-changing admin request.
+
+### 4.1 Public Endpoints
+
+| Method & Path | Auth | Notes |
+|---|---|---|
+| `GET /api/animals` | None | List animals; optional `?status=` filter matching the design's filter tabs. Excludes soft-deleted animals (`deleted_at IS NULL`). `[AMENDED]` |
+| `GET /api/animals/:id` | None | Full animal detail incl. ordered media, for the detail lightbox. Excludes soft-deleted animals. `[AMENDED]` |
+| `GET /api/gallery` | None | Gallery photo list with captions. |
+| `GET /api/content` | None | Current editable site text, keyed by field. |
+| `GET /api/settings` | None | Public settings: `showPublicPrices`, `galleryStyle`. |
+| `POST /api/contact` | None + Turnstile token required | Inquiry submission (name, email, message, optional animalId); verifies Turnstile server-side, then sends email via Resend. |
+
+### 4.2 Authentication Endpoints
+
+| Method & Path | Auth | Notes |
+|---|---|---|
+| `POST /api/auth/login` | None | Validates credentials; increments/resets failed-attempt counter; issues session cookie on success. |
+| `POST /api/auth/logout` | Session | Invalidates the current session token in D1. |
+| `POST /api/auth/forgot-password` | None | Generic response regardless of whether the account exists (avoids user enumeration); emails a reset link if it does. |
+| `POST /api/auth/reset-password` | Valid reset token | Sets a new password, invalidates the token and all existing sessions for that account. |
+| `POST /api/auth/change-password` | Session | Used for voluntary changes and the forced first-login change for new admins. |
+
+### 4.3 Administrator Endpoints
+
+| Method & Path | Auth | Notes |
+|---|---|---|
+| `POST /api/admin/animals` | Session | Create an animal record. |
+| `PUT /api/admin/animals/:id` | Session | Update an animal record. |
+| `DELETE /api/admin/animals/:id` | Session | **Soft delete** — sets `deleted_at`, does not remove the row or its media (client confirms first). `[AMENDED]` |
+| `PUT /api/admin/animals/reorder` | Session | Persist new display order for the herd grid. |
+| `POST /api/admin/animals/:id/media` | Session | Upload a photo/video to R2; client pre-resizes images first. |
+| `DELETE /api/admin/animals/:id/media/:mediaId` | Session | Remove one photo/video. |
+| `PUT /api/admin/content/:key` | Session | Edit one site text field in place (no style/placement change). |
+| `PUT /api/admin/settings` | Session | Update `showPublicPrices` / `galleryStyle`. |
+| `GET /api/admin/users` | Session | List Administrator accounts. |
+| `POST /api/admin/users` | Session | Create an Administrator; auto-generates a temp password, emails it, sets `force_password_change`. |
+| `PUT /api/admin/users/:id` | Session | Edit role; Root can directly set another admin's password as a last resort. |
+| `DELETE /api/admin/users/:id` | Session | Delete an Administrator (blocked for the Root account). |
+| `GET /api/admin/audit` | Session | Recent audit-log entries. |
+
+## 5. Data Design
+
+*Figure 2 — D1 entity-relationship diagram.*
+
+### 5.1 animals
+
+| Column | Type | Notes |
+|---|---|---|
+| id | TEXT (UUID) | Primary key. |
+| name / barn_name | TEXT | Public display name. |
+| registered_name | TEXT, nullable | Official registered name. |
+| type, sex | TEXT | Cow / Bull / Calf, etc., matching the design's categories. |
+| age_text | TEXT | Free-text age or date of birth. |
+| status | TEXT (enum) | for-sale / pending / coming-soon / not-for-sale. |
+| price_cents | INTEGER, nullable | Null when not for sale. |
+| description | TEXT | Marketing blurb. |
+| imza_number, expected_height | TEXT, nullable | Registration detail fields. |
+| sire_registered_name, dam_registered_name | TEXT, nullable | Parent registration detail. |
+| display_order | INTEGER | Manual sort position in the herd grid. |
+| **deleted_at** | **TIMESTAMP, nullable** | **`[AMENDED]` 2026-07-20 — set on delete instead of removing the row (soft delete). All public queries filter `WHERE deleted_at IS NULL`.** |
+| created_at, updated_at | TIMESTAMP | Audit timestamps. |
+
+### 5.2 animal_media
+
+| Column | Type | Notes |
+|---|---|---|
+| id | TEXT (UUID) | Primary key. |
+| animal_id | TEXT | Foreign key → `animals.id`. |
+| media_type | TEXT | `image` or `video`. |
+| url | TEXT | R2-backed URL. |
+| display_order | INTEGER | Carousel order. |
+
+### 5.3 admins
+
+| Column | Type | Notes |
+|---|---|---|
+| id | TEXT (UUID) | Primary key. |
+| username | TEXT, unique | e.g. "Root". |
+| password_hash, password_salt | TEXT | PBKDF2-SHA256 hash and per-user salt — see §6. |
+| role | TEXT | `root` or `admin`. |
+| force_password_change | BOOLEAN | Set on temp-password accounts; cleared after first change. |
+| failed_login_count, locked_until | INTEGER, TIMESTAMP nullable | Lockout tracking (3-attempt policy). |
+| created_at, last_login_at | TIMESTAMP | Audit timestamps. |
+
+### 5.4 sessions, password_reset_tokens, site_content, site_settings, audit_log
+- **sessions** — `token` (hashed, PK), `admin_id` (FK), `created_at`, `expires_at`. Backs session-cookie lookups and lets logout/revocation take effect immediately.
+- **password_reset_tokens** — `token` (hashed, PK), `admin_id` (FK), `expires_at`, `used_at` (nullable). Single-use, time-limited.
+- **site_content** — `key` (TEXT, PK), `value_text`, `updated_at`, `updated_by` (FK admins). One row per editable text field on the public site.
+- **site_settings** — `key` (TEXT, PK), `value`. Backs `showPublicPrices` and `galleryStyle`. `[DESIGN]`
+- **audit_log** — `id` (PK), `admin_id` (FK, actor), `action`, `target_type`, `target_id`, `summary`, `created_at`. Backs requirements §7.2.4's audit-log requirement. `[ADDED]`
+
+## 6. Security Design
+
+### 6.1 Password Hashing
+Passwords are hashed with PBKDF2-SHA256 (100,000 iterations, per-user random salt) using the Workers runtime's native WebCrypto SubtleCrypto API — chosen specifically because it needs no external native or WASM dependency (unlike bcrypt/argon2 libraries, which are awkward or unavailable in the Workers runtime), while still meeting modern password-storage guidance. `[ADDED]`
+
+### 6.2 Login & Session Sequence
+1. Client submits username/password to `POST /api/auth/login`.
+2. Worker looks up the admin by username; if `locked_until` is in the future, rejects immediately with a generic lockout message.
+3. Worker derives the PBKDF2 hash of the submitted password with the stored salt and compares to `password_hash`.
+4. On mismatch: increments `failed_login_count`; on the 3rd consecutive failure, sets `locked_until` and stops.
+5. On match: resets `failed_login_count` to 0, generates a random 256-bit session token, stores it (hashed) in `sessions` with an expiry, and returns it as an httpOnly, Secure, SameSite=Strict cookie.
+6. If `force_password_change` is set (new admin, first login), the client is redirected to the change-password screen before anything else is accessible.
+
+This sequence implements requirements §7.2.4 in full: 3-attempt lockout, forced first-login change for new admins, no password expiration. `[PDF]`
+
+### 6.3 Forgot / Reset Password Sequence
+1. User submits an identifier to `POST /api/auth/forgot-password`; the response is identical whether or not the account exists, to avoid revealing valid usernames.
+2. If the account exists, the Worker creates a single-use, time-limited `password_reset_tokens` row and emails a reset link (containing the raw token) via Resend.
+3. The link opens `/admin/reset-password?token=...`; the client submits a new password to `POST /api/auth/reset-password`.
+4. The Worker verifies the token is valid/unused/unexpired, sets the new password hash, marks the token used, and invalidates all existing sessions for that account.
+5. As a last resort, Root can directly set another admin's password via `PUT /api/admin/users/:id` without the email flow.
+
+### 6.4 Contact-Form Spam Protection
+The public contact form renders a Cloudflare Turnstile widget; the client includes the resulting token in its `POST /api/contact` body. The Worker verifies that token server-side against Cloudflare's siteverify endpoint using the Turnstile secret key before processing the inquiry or sending any email — a request with a missing or failed token is rejected before it ever reaches Resend. `[ADDED]`
+
+### 6.5 Secrets Inventory
+
+| Secret | Purpose | Stored As |
+|---|---|---|
+| `CLOUDFLARE_API_TOKEN` | Lets GitHub Actions deploy via Wrangler. | GitHub Actions repository secret. |
+| `RESEND_API_KEY` | Send transactional email from the Worker. | Cloudflare Worker secret (set once via `wrangler secret put` — see §10). |
+| `TURNSTILE_SECRET_KEY` | Server-side verification of Turnstile tokens. | Cloudflare Worker secret. |
+| `ROOT_ADMIN_BOOTSTRAP_PASSWORD` | One-time seed value for the initial Root account. | GitHub Actions secret, consumed once by a seed step, then rotated by Root from the admin UI (see §10, item 19). |
+
+No secret or credential value is ever committed to the repository or printed in project documentation — consistent with the handling of the exposed root password in the original requirements PDF. `[ADDED]`
+
+## 7. CI/CD Pipeline Design
+
+*Figure 3 — CI/CD pipeline with the required-reviewer production approval gate.*
+
+Implements requirements §11.1 (Deployment Approval Gate) and ties directly into the §6.4 Design Iteration Workflow's final step. `[PDF]`
+
+### 7.1 Pipeline Stages
+1. Pull request opened against `main` → GitHub Actions runs lint, unit, and integration tests.
+2. On success, CI deploys a PREVIEW build: Cloudflare Pages preview URL plus the preview Worker/D1 environment, so the owner can click through a real, working site before approving anything.
+3. Merge to `main` → CI re-runs the full test suite, then the production-deploy job targets the GitHub "production" Environment.
+4. The "production" Environment has the owner (Nate) configured as a required reviewer (see §10, item 4) — the job pauses until he clicks "Approve and deploy" in the GitHub Actions UI or mobile app. `[MANUAL SETUP]`
+5. Once approved, CI deploys the production Worker, applies any pending D1 migrations, and publishes the Pages build bound to `scattered-oaks-zebu.com`.
+
+### 7.2 Workflow File Structure
+A single `.github/workflows/ci.yml` with two jobs: `build-and-test` (runs on every PR and push to `main`) and `deploy`, gated by `environment: production` and depending on `build-and-test`.
+
+A separate `preview-deploy` job (or step within `build-and-test`) runs only on `pull_request` events, publishing to the preview environment described in §2.2.
+
+## 8. Testing Strategy Design
+
+| Level | Tool | Covers |
+|---|---|---|
+| Unit | Vitest | Password hashing/verification, lockout counting, token generation/expiry, animal data validation. |
+| Integration | Vitest + `@cloudflare/vitest-pool-workers` | API endpoints (§4) exercised against a real Workers/D1 runtime in CI, not a mock. |
+| End-to-End | Playwright | Visitor flow (browse/filter/lightbox/contact), Administrator flow (login/edit/CRUD/settings), Security flow (lockout, reset, forced first-login change) — matching requirements §12.3 exactly. |
+
+CI enforces a minimum coverage threshold (recommended: 80%, consistent with the coverage gate already used on the owner's other project) before the deploy job is even eligible to run. `[ADDED]`
+
+## 9. Deployment & Infrastructure Design
+
+| Resource | Preview | Production |
+|---|---|---|
+| Cloudflare Pages project | Automatic preview deployment per PR (same project) | `scattered-oaks-farms` — production deployment |
+| Worker | `scattered-oaks-api-preview` | `scattered-oaks-api` |
+| D1 database | `scattered-oaks-db-preview` (seeded sample data) | `scattered-oaks-db` |
+| R2 bucket | `scattered-oaks-media-preview` | `scattered-oaks-media` |
+| Custom domain | auto-generated `*.pages.dev` preview URL | `scattered-oaks-zebu.com` |
+| Turnstile widget | Turnstile test/sandbox keys | Production site key + secret key |
+
+### 9.1 Secret / Variable Matrix
+
+| Secret | GitHub Actions | Cloudflare (preview) | Cloudflare (production) |
+|---|---|---|---|
+| `CLOUDFLARE_API_TOKEN` | Yes | — | — |
+| `RESEND_API_KEY` | Source of truth | Optional test key | Live key |
+| `TURNSTILE_SECRET_KEY` | — | Test secret key | Live secret key |
+| `ROOT_ADMIN_BOOTSTRAP_PASSWORD` | One-time seed only | — | Consumed once by seed script |
+
+## 10. Manual Configuration Checklist
+Every step below is a one-time, human-performed action — none of it can run inside CI on a brand-new GitHub/Cloudflare/Resend account. Work through each group once, in order, before the pipeline in §7 can run end to end. `[MANUAL SETUP]`
+
+### 10.1 GitHub
+1. Confirm the repository `Scattered-Oaks-Web-Page` is public (Settings > General) — required for the free required-reviewer Environment protection used below.
+2. Enable branch protection on `main`: require a pull request before merging and require status checks to pass (Settings > Branches).
+3. Create two GitHub Environments named `preview` and `production` (Settings > Environments).
+4. On the `production` Environment, add the owner (Nate) as a required reviewer (Settings > Environments > production > Required reviewers).
+5. Add repository secrets: `CLOUDFLARE_API_TOKEN`, `RESEND_API_KEY`, `TURNSTILE_SECRET_KEY`, `ROOT_ADMIN_BOOTSTRAP_PASSWORD` (Settings > Secrets and variables > Actions).
+6. Confirm GitHub Actions is enabled for the repository (Settings > Actions > General).
+
+### 10.2 Cloudflare
+7. Create or confirm a Cloudflare account.
+8. Add `scattered-oaks-zebu.com` as a Cloudflare zone/site, then update the domain's nameservers at the domain registrar to the two nameservers Cloudflare assigns — done once, at the registrar, outside of CI.
+9. Create a scoped Cloudflare API Token limited to this account/zone with Workers Scripts:Edit, Pages:Edit, D1:Edit, R2:Edit, and Zone:DNS:Edit permissions; use it as the `CLOUDFLARE_API_TOKEN` GitHub secret from step 5.
+10. Create the D1 databases via the Wrangler CLI: `wrangler d1 create scattered-oaks-db` and `wrangler d1 create scattered-oaks-db-preview`; record the returned database IDs in `wrangler.toml`.
+11. Create the R2 bucket(s): `wrangler r2 bucket create scattered-oaks-media` (and a preview equivalent).
+12. Create the Cloudflare Pages project and connect it to the GitHub repository (Cloudflare dashboard > Workers & Pages > Create > Pages > Connect to Git).
+13. Bind the custom domain `scattered-oaks-zebu.com` to the Pages project (Custom domains tab) — since the zone already lives in the same Cloudflare account, the DNS record is provisioned automatically.
+14. Register a Cloudflare Turnstile widget for the domain to obtain a site key (public, used in the frontend) and a secret key (Worker secret) — Cloudflare dashboard > Turnstile.
+15. Push the `RESEND_API_KEY` and `TURNSTILE_SECRET_KEY` into the Worker once via `wrangler secret put` for each environment; subsequent CI deploys reuse them without re-entering anything.
+
+### 10.3 Resend
+16. Create a Resend account.
+17. Add and verify a sending domain (e.g. `mail.scattered-oaks-zebu.com`); Resend provides SPF/DKIM/DMARC DNS records that must be added in the Cloudflare DNS dashboard for that same zone.
+18. Generate a Resend API key and store it as both the `RESEND_API_KEY` GitHub secret (step 5) and the Cloudflare Worker secret (step 15).
+
+### 10.4 Root Administrator
+19. After the first successful production deploy, log in as Root using the bootstrap credential, immediately change the password from the admin UI as required by requirements §7.2.4, and rotate the corresponding GitHub secret.
+
+## 11. Traceability Matrix
+
+| Requirements Doc Section | Designed In |
+|---|---|
+| §6 Design Reference Summary / §6.4 Design Iteration Workflow | SDD §3 (Frontend Design), SDD §7 (CI/CD Pipeline Design) |
+| §7.1 Public Website | SDD §3 (Frontend Design), SDD §4 (Backend/API Design) |
+| §7.2 Administrator Mode | SDD §3, §4, §5, §6 (Security Design) |
+| §8 Non-Functional Requirements | SDD §2 (Architecture Overview), §3, §6, §8 (Testing) |
+| §9 Technical Architecture | SDD §2, §3, §4 |
+| §10 Data Model | SDD §5 (Data Design) |
+| §11 CI/CD & Deployment incl. §11.1 Approval Gate | SDD §7 (CI/CD Pipeline Design), §9 (Deployment & Infrastructure), §10 (Manual Configuration Checklist) |
+| §12 Testing Requirements | SDD §8 (Testing Strategy Design) |
+
+## Appendix A: Glossary
+See Section 1.4 for the full acronym/definition table used throughout this document.
+
+## Appendix B: Diagram Index
+- Figure 1 — System Architecture / Context Diagram (Section 2).
+- Figure 2 — D1 Entity-Relationship Diagram (Section 5).
+- Figure 3 — CI/CD Pipeline with Required-Reviewer Approval Gate (Section 7).
+
+## Change Log
+Entries added here whenever implementation causes a design decision to change from what's documented above. Each entry should say what changed, why, and which section(s) were amended.
+
+- **2026-07-20** — §4.1, §4.3, §5.1: Added `animals.deleted_at` (nullable timestamp). `DELETE /api/admin/animals/:id` now sets it instead of removing the row; all public animal queries filter `WHERE deleted_at IS NULL`. Decided ahead of implementation to support future recoverability/export needs without a later schema migration.
