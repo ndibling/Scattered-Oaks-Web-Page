@@ -99,7 +99,7 @@ Close every remaining gap before this is CI/CD-eligible.
 ---
 
 ## Track B — Manual Cloud/GitHub Setup
-Directly from SDD §10 — can start anytime, in this order, ahead of or alongside Track A. Only needs to be **complete** before M9.
+Directly from SDD §10 — can start anytime, in this order, ahead of or alongside Track A. Only needs to be **complete** before M9. See `Manual-Setup-Guide.md` for the exact click-by-click version of B1–B3 below (it reorders these by dependency rather than by platform, and flags which sub-steps need M1's code to exist first).
 
 - **B1. GitHub** — confirm repo is public; branch protection on `main`; create `preview`/`production` Environments; add Nate as required reviewer on `production`; add the four repo secrets (`CLOUDFLARE_API_TOKEN`, `RESEND_API_KEY`, `TURNSTILE_SECRET_KEY`, `ROOT_ADMIN_BOOTSTRAP_PASSWORD` — placeholder values fine until B2/B3 produce real ones); confirm Actions is enabled.
 - **B2. Cloudflare** — create/confirm account; add `scattered-oaks-zebu.com` as a zone and repoint nameservers at the registrar; create a scoped API token; `wrangler d1 create` for both databases (record IDs into `wrangler.toml` from M1); create R2 buckets; create the Pages project connected to this repo; bind the custom domain; register the Turnstile widget (site key → M7's frontend, secret key → Worker secret); push `RESEND_API_KEY`/`TURNSTILE_SECRET_KEY` via `wrangler secret put`.
