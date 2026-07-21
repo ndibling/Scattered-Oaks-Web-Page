@@ -108,13 +108,15 @@ If you get an error about a conflicting DNS record already existing for that hos
 ## Phase F — Turnstile
 *(SDD #14 — Do now)*
 
-**F1 (#14) — Register a Turnstile widget.**
+**F1 (#14) — Register a Turnstile widget.** `[AMENDED 2026-07-21]` The field for authorized domains is labeled **Hostname**, not "Domains," and Turnstile doesn't support wildcards — see below.
 Cloudflare dashboard → **Turnstile** → **Add widget**.
 - Widget name: `Scattered Oaks Contact Form`
-- Domains: `scattered-oaks-zebu.com` **and** your `*.pages.dev` preview domain (so the contact form works on PR previews too)
+- Hostname: `scattered-oaks-zebu.com` — enter as a bare fully-qualified domain (no `http://`, no port, no wildcard like `*.example.com`). At least one hostname is required to create the widget.
 - Widget mode: **Managed** (recommended default)
 - **Create**
-→ Copy the **Site Key** (public — goes into the frontend contact-form component in M7) and the **Secret Key** (goes into a GitHub secret in Phase H, then a Worker secret).
+→ Copy the **Site Key** (public — goes into the frontend contact-form component in M7) and the **Secret Key** (goes into a GitHub secret in Phase H, then a Worker secret — see the note on secret handling in Phase H1).
+
+**Preview-domain hostname deferred.** The original plan was to also authorize the `*.pages.dev` preview domain so the contact form works on PR previews, but Turnstile requires exact FQDNs with no wildcards, and the real preview URL pattern for `scattered-oaks-farms` (now on Cloudflare's unified Workers Builds model, not classic Pages) isn't known until a real preview deployment exists post-M1. Come back and add that specific hostname to this widget once you see an actual preview URL.
 
 ---
 
@@ -124,10 +126,10 @@ Cloudflare dashboard → **Turnstile** → **Add widget**.
 **G1 (#16) — Create a Resend account.**
 Sign up at `resend.com`.
 
-**G2 (#17) — Add and verify the sending domain.**
-Resend dashboard → **Domains** → **Add Domain** → enter your chosen sending subdomain (e.g. `mail.scattered-oaks-zebu.com` — see the open question in `Requirements.md` §15 if this isn't finalized yet). Resend displays the required DNS records (SPF `TXT`, DKIM `CNAME`/`TXT`, DMARC `TXT`).
-→ Cloudflare dashboard → your zone → **DNS** → **Records** → **Add record** for each one, matching type/name/content exactly as Resend shows it.
-→ Back in Resend, click **Verify DNS Records**. This can take a few minutes to propagate; retry verification if it doesn't pass immediately.
+**G2 (#17) — Add and verify the sending domain.** `[AMENDED 2026-07-21]` Domain confirmed as `mail.scattered-oaks-zebu.com` (was an open question — see `Requirements.md` §15); also, Resend's "Domain" field takes this subdomain directly (Resend doesn't distinguish domains from subdomains), and since the zone's already on Cloudflare, prefer the **Auto configure** path over manual record entry.
+Resend dashboard → **Domains** → **Add Domain** → enter `mail.scattered-oaks-zebu.com`.
+- Choose **Auto configure** → click **Sign in to Cloudflare** → log in with the same Cloudflare account (`heather.a.johnston@gmail.com`) → authorize. Resend adds the SPF/DKIM/MX records directly to the zone — nothing to copy/paste. Wait for the domain to show **Verified** (usually a few minutes).
+- Fallback if Auto configure isn't available: choose **Manual setup** instead, then go to Cloudflare dashboard → your zone → **DNS** → **Records** → **Add record** for each one Resend displays (SPF `TXT`, DKIM `CNAME`/`TXT`, DMARC `TXT`), matching type/name/content exactly, then click **Verify DNS Records** back in Resend.
 
 **G3 (#18) — Generate the API key.**
 Resend dashboard → **API Keys** → **Create API Key** → name `scattered-oaks-prod` → Permission: **Sending access**, scoped to the domain from G2 → **Add** → copy the key value now (shown once).
@@ -136,6 +138,8 @@ Resend dashboard → **API Keys** → **Create API Key** → name `scattered-oak
 
 ## Phase H — Push every secret into place
 *(Closes out SDD #5 and #15)*
+
+> **On secret values generally:** paste these directly into the destination form (GitHub's secret UI, a `wrangler secret put` prompt) rather than into a chat with an AI assistant or anywhere else — the assistant only needs to know a secret was added, never the value itself.
 
 **H1 — Choose the Root bootstrap password.** Do now.
 Pick a password meeting the site's own policy (`Requirements.md` §7.2.4: 8+ chars, at least one number, one lowercase, one uppercase, one special character). This is a one-time seed value — you'll log in with it once (Phase I) and immediately change it, so a password manager's random generator is ideal here.
@@ -150,7 +154,7 @@ Pick a password meeting the site's own policy (`Requirements.md` §7.2.4: 8+ cha
 | `TURNSTILE_SECRET_KEY` | Phase F1 |
 | `ROOT_ADMIN_BOOTSTRAP_PASSWORD` | Phase H1 |
 
-**H3 (#15) — Push secrets to the Cloudflare Workers.** Needs code (M1+) — the Worker (`scattered-oaks-api` / `scattered-oaks-api-preview`) must exist first, which happens once `wrangler.toml` and the API code land in M1/M3.
+**H3 (#15) — Push secrets to the Cloudflare Worker.** Needs code (M1+) — the `scattered-oaks-farms` Worker must exist first, which happens once `wrangler.toml` and the API code land in M1/M3. Preview vs. production is a named-environment flag on the same Worker project (see `SDD.md` §2.2's 2026-07-21 amendment), not two separately-named Workers.
 ```
 wrangler secret put RESEND_API_KEY --env production
 wrangler secret put RESEND_API_KEY --env preview

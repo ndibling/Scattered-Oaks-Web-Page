@@ -1,6 +1,6 @@
 # Scattered Oaks Farms — Website Requirements Specification
 
-**Version 2.2 (living document)** — originally authored as Version 2.1 (Combined & Expanded), July 19, 2026, as a Word document (`Scattered Oaks Farm Requirements v2.docx`, preserved in this folder as the frozen v1 baseline). This Markdown version is the living source of truth going forward: it is updated whenever implementation changes the actual requirements, per the workflow in `Development-Plan.md`.
+**Version 2.3 (living document)** — originally authored as Version 2.1 (Combined & Expanded), July 19, 2026, as a Word document (`Scattered Oaks Farm Requirements v2.docx`, preserved in this folder as the frozen v1 baseline). This Markdown version is the living source of truth going forward: it is updated whenever implementation changes the actual requirements, per the workflow in `Development-Plan.md`.
 
 This document combines the original requirements PDF (**"Scattered Oaks Farm Requirements.pdf"**) with the functional design already built in the Claude Design project (**"Scattered Oaks Farms.dc.html"**, project ID `a8493b50-0e7e-46e9-a0ef-930263d1a0c8`), plus additional requirements identified during analysis. Every requirement is tagged with its source: `[PDF]` = from the original requirements document, `[DESIGN]` = derived from the existing Claude Design prototype, `[ADDED]` = introduced during analysis, `[AMENDED]` = changed after implementation began (see change log at the bottom).
 
@@ -278,7 +278,7 @@ The full test suite must pass before any deploy proceeds; a minimum coverage thr
 - Should the Administrator login/CMS live at a dedicated path (e.g., `/admin`) on the same domain, or a separate subdomain? — **Resolved:** `/admin` on the same domain (SDD §3.1).
 - What is the desired retention/export policy for old animal records after an animal is sold or removed? — **Resolved 2026-07-20:** soft delete (see §7.2.2, §10, and the change log).
 - Should there be more than two admin roles (e.g., a read-only or limited editor role) in the future, or is Root/Administrator sufficient long-term? — Open; deferred, out of scope for v1 (§14).
-- Confirm the outbound "from" email address/domain to authenticate with Resend (e.g., a subdomain of `scattered-oaks-zebu.com`). — Open; to be resolved during Development Plan milestone B3.
+- Confirm the outbound "from" email address/domain to authenticate with Resend. — **Resolved 2026-07-21:** `mail.scattered-oaks-zebu.com`. A dedicated subdomain rather than the bare root domain, so Resend's SPF/DKIM/DMARC records can't conflict with any existing email setup on `scattered-oaks-zebu.com`, and so the transactional-email sending reputation stays isolated from the main domain.
 
 ## Appendix A: Glossary
 
@@ -316,3 +316,4 @@ Every item tagged `[ADDED]` throughout this document, gathered here with rationa
 Entries added here whenever implementation causes a requirement to change from what's documented above. Each entry should say what changed, why, and which section(s) were amended.
 
 - **2026-07-20** — §7.2.2, §10, §15: Animal deletion is a soft delete (`deleted_at` timestamp) rather than a hard row delete. Decided ahead of implementation to support future recoverability/export needs without a schema change later.
+- **2026-07-21** — §15: Resend's outbound sending domain confirmed as `mail.scattered-oaks-zebu.com`, resolving the last open question from the original analysis.
