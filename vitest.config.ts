@@ -2,8 +2,8 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    include: ['src/**/*.test.ts', 'workers/**/*.test.ts'],
-    passWithNoTests: true, // M1 has zero tests yet by design (Development-Plan.md exit criteria)
+    include: ['src/**/*.test.ts', 'workers/**/*.test.ts', 'migrations/**/*.test.ts'],
+    passWithNoTests: true,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],

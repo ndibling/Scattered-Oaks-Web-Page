@@ -7,7 +7,7 @@ This is **read-only reference for implementation** — never edited by hand, nev
 ## Files
 
 - **`Scattered Oaks Farms.dc.html`** — the binding visual/interaction spec (Requirements.md §6). Written in Claude Design's pseudo-component syntax (`<sc-for>`, `<sc-if>`, `{{ }}` bindings, a `DCLogic` component class) — not directly runnable, and not meant to be. M1 extracts the design tokens (OKLCH colors, Quicksand/Nunito type, spacing/radius) from this file's `<style>` block into Astro's shared tokens module (SDD.md §3.3); M4 rebuilds each section as a real Astro/React component reproducing this markup's visual/interaction behavior exactly.
-- Also contains the 11 sample animals' data shape (name, type, sex, age, status, price, blurb, photos) and the 9 gallery photo captions — useful as a reference for the seed data in Development-Plan.md's M2, though the *real* 38-head herd (M10) replaces these.
+- Also contains the 11 sample animals' data shape (name, type, sex, age, status, price, blurb, photos) and the 9 gallery photo captions — useful as a reference for the seed data in Development-Plan.md's M2, though the _real_ 38-head herd (M10) replaces these.
 
 ## Not pulled
 

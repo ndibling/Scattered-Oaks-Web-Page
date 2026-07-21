@@ -15,7 +15,9 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test --pass-with-no-tests"
+    "test:e2e": "playwright test --pass-with-no-tests",
+    "migrate:local": "wrangler d1 migrations apply scattered-oaks-db --local",
+    "seed:local": "wrangler d1 execute scattered-oaks-db --local --file=./seeds/sample-data.sql"
   },
   "dependencies": {
     "@astrojs/preact": "^6.0.1",

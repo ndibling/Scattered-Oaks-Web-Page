@@ -1,6 +1,6 @@
 # Scattered Oaks Farms — Software Design Description (SDD)
 
-**Version 1.3 (living document)** — originally authored as Version 1.0, July 19, 2026, as a Word document (`Scattered Oaks Farm Software Design Description.docx`, preserved in this folder as the frozen v1 baseline). This Markdown version is the living source of truth going forward: it is updated whenever implementation changes the actual design, per the workflow in `Development-Plan.md`.
+**Version 1.4 (living document)** — originally authored as Version 1.0, July 19, 2026, as a Word document (`Scattered Oaks Farm Software Design Description.docx`, preserved in this folder as the frozen v1 baseline). This Markdown version is the living source of truth going forward: it is updated whenever implementation changes the actual design, per the workflow in `Development-Plan.md`.
 
 This document describes the technical design of the Scattered Oaks Farms website, implementing the requirements defined in `Requirements.md` (formerly "Scattered Oaks Farms Website Requirements Specification" v2.1). It carries forward that document's provenance tags `[PDF]` / `[DESIGN]` / `[ADDED]` where a design decision traces directly to a specific requirement, and uses `[MANUAL SETUP]` for any one-time configuration step a human must perform by hand in GitHub, Cloudflare, or Resend — none of this can be scripted by CI on a brand-new account. Every `[MANUAL SETUP]` item also appears, in executable checklist form, in Section 10. `[AMENDED]` marks a design change made after implementation began (see change log at the bottom).
 
@@ -181,6 +181,18 @@ The Workers API is organized into route modules — auth, animals, content, sett
 | url | TEXT | R2-backed URL. |
 | display_order | INTEGER | Carousel order. |
 
+### 5.2a gallery_photos
+`[AMENDED]` 2026-07-21 — this table was missing from the original data design despite `GET /api/gallery` (§4.1) and the design prototype's 9-item captioned gallery grid needing somewhere to live. Added during M2 implementation; see the change log.
+
+| Column | Type | Notes |
+|---|---|---|
+| id | TEXT (UUID) | Primary key. |
+| url | TEXT | R2-backed URL. |
+| label | TEXT | Short caption shown on the gallery tile and in the lightbox title. |
+| description | TEXT, nullable | Longer caption shown in the gallery lightbox. |
+| display_order | INTEGER | Grid position. |
+| created_at, updated_at | TIMESTAMP | Audit timestamps. |
+
 ### 5.3 admins
 
 | Column | Type | Notes |
@@ -344,3 +356,4 @@ Entries added here whenever implementation causes a design decision to change fr
 - **2026-07-21** — §10 item 14: Turnstile's authorized-domain field is labeled **Hostname**, requires a bare FQDN per entry, and supports no wildcards. The widget was created with only `scattered-oaks-zebu.com`; the preview-URL hostname is deferred until a real preview deployment exists (the `*.pages.dev`-style wildcard originally planned won't work regardless, since wildcards aren't supported).
 - **2026-07-21** — §10 item 17: Sending domain confirmed as `mail.scattered-oaks-zebu.com` (resolves `Requirements.md` §15). Also switched the recommended verification path to Resend's Auto configure/Domain Connect integration, discovered while actually performing this step — it adds the DNS records automatically since the zone is already on Cloudflare, avoiding manual copy-paste.
 - **2026-07-21** — §10 item 15: Confirmed `wrangler secret put --env` requires a local `wrangler.toml` defining the Worker name and named environments — tried it ahead of M1 and got "Required Worker name missing" / "No environment found in configuration." Sequencing note only; no design change, just makes explicit that this step must follow M1, not just "the Worker existing remotely."
+- **2026-07-21** — §5.2a (new): added `gallery_photos` (id, url, label, description, display_order, timestamps). Discovered during M2 implementation that the original data design never actually defined a table backing `GET /api/gallery` or the design prototype's 9-item captioned gallery grid — an oversight in the original SDD, not a scope change.

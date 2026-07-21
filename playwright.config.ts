@@ -14,7 +14,5 @@ export default defineConfig({
   // spawn-and-wait webServer feature. Start the dev server yourself first:
   //   astro dev --background   (see CLAUDE.md)
   // then run `npm run test:e2e`. CI (M9) starts it the same way before this step.
-  projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-  ],
+  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
 });

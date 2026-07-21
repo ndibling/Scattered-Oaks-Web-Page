@@ -1,0 +1,7 @@
+# Hand-formatted prose docs — Prettier's markdown formatter reformats tables/lists
+# in ways that create pure-noise diffs on files we carefully hand-author.
+*.md
+
+# Exact, byte-faithful pulls from Claude Design — must never be reformatted,
+# see design-reference/README.md.
+design-reference/
