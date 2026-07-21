@@ -6,6 +6,21 @@ Each step is tagged:
 - **Do now** — no application code needed, safe to do today.
 - **Needs code (M1+)** — requires the repo scaffold from Development-Plan.md M1 (a `wrangler.toml`, a connectable frontend) to complete fully. Do the account/resource-creation part now; finish the connection step once M1 lands.
 
+## Resources Created
+Non-secret values generated while working through this guide (2026-07-21) — everything M1's `wrangler.toml` needs. Secrets (API tokens, keys, passwords) are **not** repeated here; they live only in GitHub Actions secrets per Phase H.
+
+| Resource | Value |
+|---|---|
+| Cloudflare account | `heather.a.johnston@gmail.com` (account id `78698cbd5aa89fdf32f89b0fd6e83db3`) |
+| Cloudflare zone (`scattered-oaks-zebu.com`) | id `b99ecde44db22b440266502f51bab82c`, status `active` |
+| D1 database `scattered-oaks-db` | id `347610ff-6871-4195-b102-9f071dcbddb0` |
+| D1 database `scattered-oaks-db-preview` | id `713e4729-4c61-463b-b81f-1fb66b728542` |
+| R2 bucket | `scattered-oaks-media` |
+| R2 bucket (preview) | `scattered-oaks-media-preview` |
+| Worker project | `scattered-oaks-farms` (connected to GitHub via Workers Builds) |
+| Turnstile Site Key (public) | `0x4AAAAAAD6H-O_yKg6fVzMc` |
+| Resend sending domain | `mail.scattered-oaks-zebu.com` (verified) |
+
 ---
 
 ## Phase A — GitHub baseline
@@ -154,7 +169,7 @@ Pick a password meeting the site's own policy (`Requirements.md` §7.2.4: 8+ cha
 | `TURNSTILE_SECRET_KEY` | Phase F1 |
 | `ROOT_ADMIN_BOOTSTRAP_PASSWORD` | Phase H1 |
 
-**H3 (#15) — Push secrets to the Cloudflare Worker.** Needs code (M1+) — the `scattered-oaks-farms` Worker must exist first, which happens once `wrangler.toml` and the API code land in M1/M3. Preview vs. production is a named-environment flag on the same Worker project (see `SDD.md` §2.2's 2026-07-21 amendment), not two separately-named Workers.
+**H3 (#15) — Push secrets to the Cloudflare Worker.** Needs code (M1+). Confirmed 2026-07-21 by trying it early: running `wrangler secret put RESEND_API_KEY --env production` against this repo (before `wrangler.toml` exists) fails with `No environment found in configuration with name "production"` and `Required Worker name missing`. Wrangler needs a local `wrangler.toml` defining the Worker's name and its named environments before `--env` means anything — the Worker existing *remotely* in Cloudflare isn't sufficient. Wait for M1's `wrangler.toml` (with `[env.production]`/`[env.preview]` sections) rather than working around it with a bare `--name` flag, which would target the wrong scope and likely need redoing anyway. Preview vs. production is a named-environment flag on the same Worker project (see `SDD.md` §2.2's 2026-07-21 amendment), not two separately-named Workers.
 ```
 wrangler secret put RESEND_API_KEY --env production
 wrangler secret put RESEND_API_KEY --env preview

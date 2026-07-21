@@ -24,11 +24,12 @@ Testing isn't a separate late phase — each milestone in Track A ends with its 
 ## Track A — Build
 
 ### M1. Repo & Project Scaffold
-Set up the Astro project, folder layout, and tooling — no backend logic yet.
+Set up the Astro project, folder layout, and tooling — no backend logic yet. Track B is done as of 2026-07-21 (see `Manual-Setup-Guide.md`'s "Resources Created" section for the actual D1/R2/zone/account values this milestone consumes — no more placeholders needed).
 - `npm create astro@latest`, add React/Preact integration for islands.
 - Folder structure: `src/pages`, `src/components` (public), `src/admin` (admin islands), `src/lib` (shared client), `functions/` or `workers/` for the API, `migrations/` for D1 schema.
 - Extract the Claude Design tokens (OKLCH colors, Quicksand/Nunito, spacing/radius) into a single shared tokens module (SDD §3.3) — this is the one file later design-iteration passes touch.
-- `wrangler.toml` stub (bindings for D1/R2 left as placeholders — real IDs come from B2).
+- `wrangler.toml` with the real D1/R2 bindings and named `[env.preview]`/`[env.production]` environments (SDD §2.2's 2026-07-21 amendment — one Worker project, `scattered-oaks-farms`, not separately-named Workers per environment).
+- Before scaffolding: check what's actually live at the `scattered-oaks-farms` Worker/`scattered-oaks-zebu.com` right now — Cloudflare's Workers Builds produced deployed versions during Phase E of manual setup despite no application code existing yet, which wasn't investigated at the time. Worth confirming it's an empty/placeholder deploy before assuming a clean slate.
 - ESLint/Prettier, Vitest, Playwright installed and configured (no tests yet, just runnable).
 - **Exit criteria:** `npm run dev` serves a blank Astro shell locally; `npm test` runs (green, zero tests).
 
