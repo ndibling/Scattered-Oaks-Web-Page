@@ -98,8 +98,10 @@ Cloudflare dashboard → **Workers & Pages** → **Create** → **Connect to Git
 - **Deploy command:** `npx wrangler deploy`
 - Leave everything else default → **Save and Deploy**. If the repo has no buildable frontend/`wrangler.toml` yet, this first build fails — that's expected pre-M1; re-run it once M1 lands.
 
-**E2 (#13) — Bind the custom domain.**
-The `scattered-oaks-farms` project → **Custom domains** tab → **Set up a custom domain** → enter `scattered-oaks-zebu.com` → **Continue** → **Activate domain**. Since the zone is already in this same Cloudflare account (Phase C), the DNS record is created automatically — no manual CNAME needed.
+**E2 (#13) — Bind the custom domain.** `[AMENDED 2026-07-21]` Cloudflare added a dedicated **Domains** tab directly on the Worker project's top ribbon (May 2026 update) — it's not nested under Settings.
+Click into the `scattered-oaks-farms` project → click the **Domains** tab (top ribbon, left of Settings) → **Add** (or **+ Add domain**) → enter `scattered-oaks-zebu.com` (bare domain, no `https://`, no `www`) → confirm. Since the zone is already in this same Cloudflare account (Phase C), the DNS record and SSL certificate are provisioned automatically.
+
+If you get an error about a conflicting DNS record already existing for that hostname, go to the zone → **DNS** → **Records**, delete the existing record for the root domain (or `www`), and retry.
 
 ---
 
