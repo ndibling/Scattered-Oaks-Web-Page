@@ -64,7 +64,7 @@ Cloudflare dashboard → click your profile icon (top right) → **My Profile** 
 *(SDD #8)*
 
 **C1 (#8) — Add the domain as a Cloudflare zone.** Do now.
-Cloudflare dashboard → **Add a Site** → enter `scattered-oaks-zebu.com` → choose the **Free** plan → Cloudflare scans existing DNS records → **Continue**. Cloudflare shows two nameservers (e.g. `xxx.ns.cloudflare.com`, `yyy.ns.cloudflare.com` — yours will be specific to this zone).
+Cloudflare dashboard → **Domains** (left sidebar, account-level — not inside a Worker/Pages project) → **Onboard a domain** *(Cloudflare's 2026 rename of the older "Add a Site" button)* → enter `scattered-oaks-zebu.com` → choose the **Free** plan → Cloudflare scans existing DNS records → **Continue**. Cloudflare shows two nameservers (e.g. `xxx.ns.cloudflare.com`, `yyy.ns.cloudflare.com` — yours will be specific to this zone).
 → Go to whichever registrar the domain was purchased through → find **Nameservers** in that registrar's DNS/domain settings → replace the existing nameservers with the two Cloudflare gave you → save.
 → Back in Cloudflare, the zone shows **Pending Nameserver Update** until propagation completes (usually minutes, can take up to 24h). Wait for it to flip to **Active** before relying on anything DNS-dependent (Resend domain verification in Phase G needs this).
 
