@@ -1,6 +1,6 @@
 # Scattered Oaks Farms — Software Design Description (SDD)
 
-**Version 1.1 (living document)** — originally authored as Version 1.0, July 19, 2026, as a Word document (`Scattered Oaks Farm Software Design Description.docx`, preserved in this folder as the frozen v1 baseline). This Markdown version is the living source of truth going forward: it is updated whenever implementation changes the actual design, per the workflow in `Development-Plan.md`.
+**Version 1.2 (living document)** — originally authored as Version 1.0, July 19, 2026, as a Word document (`Scattered Oaks Farm Software Design Description.docx`, preserved in this folder as the frozen v1 baseline). This Markdown version is the living source of truth going forward: it is updated whenever implementation changes the actual design, per the workflow in `Development-Plan.md`.
 
 This document describes the technical design of the Scattered Oaks Farms website, implementing the requirements defined in `Requirements.md` (formerly "Scattered Oaks Farms Website Requirements Specification" v2.1). It carries forward that document's provenance tags `[PDF]` / `[DESIGN]` / `[ADDED]` where a design decision traces directly to a specific requirement, and uses `[MANUAL SETUP]` for any one-time configuration step a human must perform by hand in GitHub, Cloudflare, or Resend — none of this can be scripted by CI on a brand-new account. Every `[MANUAL SETUP]` item also appears, in executable checklist form, in Section 10. `[AMENDED]` marks a design change made after implementation began (see change log at the bottom).
 
@@ -61,8 +61,7 @@ The entire system runs on Cloudflare, deployed from a single GitHub repository, 
 | Layer | Technology | Purpose |
 |---|---|---|
 | Frontend | Astro + React/Preact islands | Static-first site generation with small hydrated interactive components (filters, lightboxes, contact form, admin app). |
-| Hosting / CDN | Cloudflare Pages | Static hosting, global edge CDN, automatic per-PR preview deployments. |
-| API / Compute | Cloudflare Workers | Serverless API: authentication, animal/content/settings CRUD, contact form, uploads. |
+| Hosting / CDN / API / Compute | Cloudflare Workers (with static assets) `[AMENDED]` | A single Worker (`scattered-oaks-farms`) serves both the static frontend build and the API — authentication, animal/content/settings CRUD, contact form, uploads — behind the global edge CDN, with automatic per-PR preview deployments via Workers Builds. Superseded the original separate-Pages-product design; see §2.2 and the change log. |
 | Database | Cloudflare D1 | SQLite-compatible relational storage for all structured data. |
 | Object Storage | Cloudflare R2 | Animal photo/video storage. |
 | Bot Protection | Cloudflare Turnstile | Blocks automated spam on the public contact form. |
@@ -72,11 +71,12 @@ The entire system runs on Cloudflare, deployed from a single GitHub repository, 
 | Testing | Vitest (+ `@cloudflare/vitest-pool-workers`), Playwright | Unit/integration tests against the real Workers runtime; end-to-end browser tests. |
 
 ### 2.2 Environment Topology
+`[AMENDED]` 2026-07-21 — one Worker project (`scattered-oaks-farms`), not two separate Pages/Workers products; preview vs. production is a `wrangler.toml` named-environment distinction (`--env preview` / default), each bound to its own already-provisioned D1 database and R2 bucket. See the change log for why.
 
 | Environment | Trigger | Targets |
 |---|---|---|
-| `preview` | Every pull request | Preview Cloudflare Pages deployment + preview Worker (`scattered-oaks-api-preview`) + preview D1 database (`scattered-oaks-db-preview`), seeded with sample data. |
-| `production` | Merge to `main`, gated by required-reviewer approval | Production Worker (`scattered-oaks-api`) + production D1 (`scattered-oaks-db`) + R2 bucket, bound to `scattered-oaks-zebu.com`. |
+| `preview` | Every pull request | Preview deployment of the `scattered-oaks-farms` Worker (static assets + API), bound to the preview D1 database (`scattered-oaks-db-preview`) and preview R2 bucket (`scattered-oaks-media-preview`), seeded with sample data. |
+| `production` | Merge to `main`, gated by required-reviewer approval | Production deployment of the `scattered-oaks-farms` Worker, bound to the production D1 database (`scattered-oaks-db`) and production R2 bucket (`scattered-oaks-media`), bound to `scattered-oaks-zebu.com`. |
 
 ## 3. Frontend Design
 Astro is used as the site generator: pages are static HTML by default (fast, SEO-friendly per requirements §8.4) with only the interactive pieces — filter tabs, the animal/gallery lightboxes, the contact form, and the entire `/admin` app — hydrated as small React/Preact "islands." This keeps the public site's shipped JavaScript minimal while still supporting the fully dynamic Administrator experience.
@@ -244,10 +244,10 @@ Implements requirements §11.1 (Deployment Approval Gate) and ties directly into
 
 ### 7.1 Pipeline Stages
 1. Pull request opened against `main` → GitHub Actions runs lint, unit, and integration tests.
-2. On success, CI deploys a PREVIEW build: Cloudflare Pages preview URL plus the preview Worker/D1 environment, so the owner can click through a real, working site before approving anything.
+2. On success, CI deploys a PREVIEW build: a preview deployment of the `scattered-oaks-farms` Worker (static assets + API), bound to the preview D1/R2 environment, so the owner can click through a real, working site before approving anything. `[AMENDED]`
 3. Merge to `main` → CI re-runs the full test suite, then the production-deploy job targets the GitHub "production" Environment.
 4. The "production" Environment has the owner (Nate) configured as a required reviewer (see §10, item 4) — the job pauses until he clicks "Approve and deploy" in the GitHub Actions UI or mobile app. `[MANUAL SETUP]`
-5. Once approved, CI deploys the production Worker, applies any pending D1 migrations, and publishes the Pages build bound to `scattered-oaks-zebu.com`.
+5. Once approved, CI runs `wrangler deploy` for the production environment, which applies any pending D1 migrations and publishes the Worker (static assets + API) bound to `scattered-oaks-zebu.com`. `[AMENDED]`
 
 ### 7.2 Workflow File Structure
 A single `.github/workflows/ci.yml` with two jobs: `build-and-test` (runs on every PR and push to `main`) and `deploy`, gated by `environment: production` and depending on `build-and-test`.
@@ -265,14 +265,14 @@ A separate `preview-deploy` job (or step within `build-and-test`) runs only on `
 CI enforces a minimum coverage threshold (recommended: 80%, consistent with the coverage gate already used on the owner's other project) before the deploy job is even eligible to run. `[ADDED]`
 
 ## 9. Deployment & Infrastructure Design
+`[AMENDED]` 2026-07-21 — one Worker project (`scattered-oaks-farms`), connected to GitHub via Cloudflare Workers Builds, not a separate Cloudflare Pages project. See the change log.
 
 | Resource | Preview | Production |
 |---|---|---|
-| Cloudflare Pages project | Automatic preview deployment per PR (same project) | `scattered-oaks-farms` — production deployment |
-| Worker | `scattered-oaks-api-preview` | `scattered-oaks-api` |
+| Worker project (`scattered-oaks-farms`) | Automatic preview deployment per PR (same project, Workers Builds) | Production deployment, bound to custom domain |
 | D1 database | `scattered-oaks-db-preview` (seeded sample data) | `scattered-oaks-db` |
 | R2 bucket | `scattered-oaks-media-preview` | `scattered-oaks-media` |
-| Custom domain | auto-generated `*.pages.dev` preview URL | `scattered-oaks-zebu.com` |
+| Custom domain | auto-generated preview URL | `scattered-oaks-zebu.com` |
 | Turnstile widget | Turnstile test/sandbox keys | Production site key + secret key |
 
 ### 9.1 Secret / Variable Matrix
@@ -301,8 +301,8 @@ Every step below is a one-time, human-performed action — none of it can run in
 9. Create a scoped Cloudflare API Token limited to this account/zone with Workers Scripts:Edit, Pages:Edit, D1:Edit, R2:Edit, and Zone:DNS:Edit permissions; use it as the `CLOUDFLARE_API_TOKEN` GitHub secret from step 5.
 10. Create the D1 databases via the Wrangler CLI: `wrangler d1 create scattered-oaks-db` and `wrangler d1 create scattered-oaks-db-preview`; record the returned database IDs in `wrangler.toml`.
 11. Create the R2 bucket(s): `wrangler r2 bucket create scattered-oaks-media` (and a preview equivalent).
-12. Create the Cloudflare Pages project and connect it to the GitHub repository (Cloudflare dashboard > Workers & Pages > Create > Pages > Connect to Git).
-13. Bind the custom domain `scattered-oaks-zebu.com` to the Pages project (Custom domains tab) — since the zone already lives in the same Cloudflare account, the DNS record is provisioned automatically.
+12. Create the `scattered-oaks-farms` Worker project and connect it to the GitHub repository via Workers Builds (Cloudflare dashboard > Workers & Pages > Create > Connect to Git), setting Build Command to `npm run build` and Deploy command to `npx wrangler deploy`. `[AMENDED]` 2026-07-21 — Cloudflare consolidated the separate Pages product into this unified Workers deploy flow; see the change log.
+13. Bind the custom domain `scattered-oaks-zebu.com` to the Worker project (Custom domains tab) — since the zone already lives in the same Cloudflare account, the DNS record is provisioned automatically.
 14. Register a Cloudflare Turnstile widget for the domain to obtain a site key (public, used in the frontend) and a secret key (Worker secret) — Cloudflare dashboard > Turnstile.
 15. Push the `RESEND_API_KEY` and `TURNSTILE_SECRET_KEY` into the Worker once via `wrangler secret put` for each environment; subsequent CI deploys reuse them without re-entering anything.
 
@@ -339,3 +339,4 @@ See Section 1.4 for the full acronym/definition table used throughout this docum
 Entries added here whenever implementation causes a design decision to change from what's documented above. Each entry should say what changed, why, and which section(s) were amended.
 
 - **2026-07-20** — §4.1, §4.3, §5.1: Added `animals.deleted_at` (nullable timestamp). `DELETE /api/admin/animals/:id` now sets it instead of removing the row; all public animal queries filter `WHERE deleted_at IS NULL`. Decided ahead of implementation to support future recoverability/export needs without a later schema migration.
+- **2026-07-21** — §2.1, §2.2, §7.1, §9, §10 items 12–13: Cloudflare has consolidated the standalone Pages product into a unified Workers deploy model (discovered while actually connecting the repo in Cloudflare's dashboard, whose "Set up your application" screen now shows only Project Name / Build Command / Deploy command — no Pages-specific framework preset or output-directory fields). One Worker project, `scattered-oaks-farms`, now serves both the static frontend and the API via a single `wrangler deploy`/`npx wrangler deploy` command, connected to GitHub through Workers Builds rather than a separate Cloudflare Pages project. The underlying architecture is unchanged (static frontend + API + D1 + R2 + custom domain); only the Cloudflare product surface and deploy command changed. Preview vs. production is now a `wrangler.toml` named-environment distinction rather than two differently-named Worker scripts.

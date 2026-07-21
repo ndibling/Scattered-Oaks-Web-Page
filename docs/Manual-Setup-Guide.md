@@ -88,16 +88,18 @@ wrangler r2 bucket create scattered-oaks-media-preview
 
 ---
 
-## Phase E — Pages project & custom domain
+## Phase E — Worker project & custom domain
 *(SDD #12, #13 — Needs code (M1+) to fully complete; the project can be created now, but its first build will fail until M1's scaffold exists)*
 
-**E1 (#12) — Create the Cloudflare Pages project.**
-Cloudflare dashboard → **Workers & Pages** → **Create** → **Pages** tab → **Connect to Git** → authorize Cloudflare's GitHub App if prompted → select `Scattered-Oaks-Web-Page`.
-- Build settings (once M1 exists): Framework preset **Astro**, build command `npm run build`, build output directory `dist`.
-- **Save and Deploy**. If the repo has no buildable frontend yet, this first build fails — that's expected pre-M1; re-run it once M1 lands.
+**E1 (#12) — Create the `scattered-oaks-farms` Worker project.** `[AMENDED 2026-07-21]` Cloudflare has consolidated the separate Pages product into a unified Workers deploy flow — there's no "Pages" tab or framework-preset dropdown anymore.
+Cloudflare dashboard → **Workers & Pages** → **Create** → **Connect to Git** → authorize Cloudflare's GitHub App if prompted → select `Scattered-Oaks-Web-Page`. On the "Set up your application" screen, the form only asks for three things:
+- **Project Name:** `scattered-oaks-farms`
+- **Build Command:** `npm run build`
+- **Deploy command:** `npx wrangler deploy`
+- Leave everything else default → **Save and Deploy**. If the repo has no buildable frontend/`wrangler.toml` yet, this first build fails — that's expected pre-M1; re-run it once M1 lands.
 
 **E2 (#13) — Bind the custom domain.**
-Pages project → **Custom domains** tab → **Set up a custom domain** → enter `scattered-oaks-zebu.com` → **Continue** → **Activate domain**. Since the zone is already in this same Cloudflare account (Phase C), the DNS record is created automatically — no manual CNAME needed.
+The `scattered-oaks-farms` project → **Custom domains** tab → **Set up a custom domain** → enter `scattered-oaks-zebu.com` → **Continue** → **Activate domain**. Since the zone is already in this same Cloudflare account (Phase C), the DNS record is created automatically — no manual CNAME needed.
 
 ---
 
@@ -182,7 +184,7 @@ Each command prompts you to paste the value interactively — nothing is typed o
 | C1 | 8 | Zone + nameservers |
 | D1 | 10 | D1 databases |
 | D2 | 11 | R2 buckets |
-| E1 | 12 | Pages project |
+| E1 | 12 | Worker project (`scattered-oaks-farms`) |
 | E2 | 13 | Custom domain bound |
 | F1 | 14 | Turnstile widget |
 | G1 | 16 | Resend account |
