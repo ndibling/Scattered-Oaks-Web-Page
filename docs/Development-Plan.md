@@ -29,7 +29,7 @@ Set up the Astro project, folder layout, and tooling — no backend logic yet. T
 - Folder structure: `src/pages`, `src/components` (public), `src/admin` (admin islands), `src/lib` (shared client), `functions/` or `workers/` for the API, `migrations/` for D1 schema.
 - Extract the Claude Design tokens (OKLCH colors, Quicksand/Nunito, spacing/radius) into a single shared tokens module (SDD §3.3) — this is the one file later design-iteration passes touch.
 - `wrangler.toml` with the real D1/R2 bindings and named `[env.preview]`/`[env.production]` environments (SDD §2.2's 2026-07-21 amendment — one Worker project, `scattered-oaks-farms`, not separately-named Workers per environment).
-- Before scaffolding: check what's actually live at the `scattered-oaks-farms` Worker/`scattered-oaks-zebu.com` right now — Cloudflare's Workers Builds produced deployed versions during Phase E of manual setup despite no application code existing yet, which wasn't investigated at the time. Worth confirming it's an empty/placeholder deploy before assuming a clean slate.
+- Before scaffolding: check what's actually live at the `scattered-oaks-farms` Worker/`scattered-oaks-zebu.com` right now — Cloudflare's Workers Builds produced deployed versions during Phase E of manual setup despite no application code existing yet, which wasn't investigated at the time. **Resolved 2026-07-21:** it's just Cloudflare's default "Hello world" placeholder template — confirmed via `curl https://scattered-oaks-zebu.com/`. Nothing to migrate away from; the real deploy (M9) overwrites it.
 - ESLint/Prettier, Vitest, Playwright installed and configured (no tests yet, just runnable).
 - **Exit criteria:** `npm run dev` serves a blank Astro shell locally; `npm test` runs (green, zero tests).
 
@@ -95,7 +95,7 @@ Close every remaining gap before this is CI/CD-eligible.
 - Accessibility pass against WCAG 2.1 AA (automated axe-core scan + manual keyboard-nav check on modals/filters).
 - Performance pass: confirm image lazy-loading below the fold, check first-contentful-paint locally against the §8.2 2-second target.
 - Coverage check: confirm the suite clears the 80% threshold that CI will enforce (SDD §8).
-- **Exit criteria:** `npm test` (unit+integration) and `npx playwright test` (e2e) both green locally, coverage ≥ 80%, no critical axe-core violations.
+- **Exit criteria:** `npm test` (unit+integration) and `npx playwright test` (e2e) both green locally, coverage ≥ 80%, no critical axe-core violations. `[AMENDED]` 2026-07-21 — `astro dev` auto-daemonizes into background mode in this dev environment, which breaks Playwright's `webServer` auto-launch (the spawned process exits immediately instead of blocking). `playwright.config.ts` has no `webServer` block as a result; start the dev server yourself first (`astro dev --background`, per `CLAUDE.md`) before running `npm run test:e2e`. CI (M9) needs the equivalent: start the server as an explicit background step before the Playwright job, not rely on Playwright to launch it.
 
 ---
 
@@ -119,7 +119,7 @@ Requires Track A (code + tests exist) and Track B (accounts/secrets exist).
 - **Exit criteria:** opening a PR produces a working preview site automatically; merging to `main` produces a pending, approval-gated production deployment.
 
 ### M10. Content Migration
-- Replace the 11 sample animals with the real herd of 38 (owner supplies data/photos per requirements §13).
+- Replace the 11 sample animals with the real herd of 38 (owner supplies data/photos per requirements §13). `[AMENDED]` 2026-07-21 — the Claude Design project's `uploads/` folder already has real photography for the 11 sample animals plus farm/lifestyle gallery shots and the real logo (see `design-reference/README.md`); pull those into R2 directly rather than assuming all photography is still outstanding. Only the remaining ~27 animals need new photos/data from the owner.
 - Replace all placeholder site copy/photos with final farm content.
 - Confirm gallery links to the farm's Facebook page.
 - **Exit criteria:** production D1 (once seeded) reflects the real herd, not sample data.

@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:oklch(0.96 0.025 85);font-family:'Nunito',sans-serif;}
+  a{color:oklch(0.5 0.08 195);text-decoration:none;}
+  a:hover{color:oklch(0.4 0.09 195);}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;flex-direction:column;color:oklch(0.27 0.03 50);">
+
+  <!-- NAV -->
+  <header style="position:sticky;top:0;z-index:20;background:oklch(0.96 0.025 85 / 0.94);backdrop-filter:blur(6px);border-bottom:2px solid oklch(0.68 0.11 65 / 0.4);">
+    <div style="max-width:1180px;margin:0 auto;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+      <a href="#home" style="display:flex;align-items:center;gap:10px;font-family:'Quicksand',sans-serif;font-weight:700;font-size:20px;color:oklch(0.4 0.08 195);letter-spacing:0.2px;">
+        <img src="uploads/Scattered Oaks Logo-eb6f247a.png" alt="Scattered Oaks Farm logo" style="width:44px;height:44px;border-radius:50%;object-fit:cover;"/>
+        Scattered Oaks <span style="color:oklch(0.6 0.1 60);">Farms</span>
+      </a>
+      <nav style="display:flex;gap:26px;flex-wrap:wrap;font-family:'Quicksand',sans-serif;font-weight:600;font-size:15px;">
+        <a href="#home" style="color:oklch(0.27 0.03 50);">Home</a>
+        <a href="#about" style="color:oklch(0.27 0.03 50);">About</a>
+        <a href="#animals" style="color:oklch(0.27 0.03 50);">Available Animals</a>
+        <a href="#gallery" style="color:oklch(0.27 0.03 50);">Gallery</a>
+        <a href="#contact-form" style="background:oklch(0.5 0.08 195);color:oklch(0.99 0.01 85);padding:8px 16px;border-radius:999px;">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <section id="home" style="position:relative;padding:90px 28px 80px;background:linear-gradient(180deg, oklch(0.93 0.03 80) 0%, oklch(0.96 0.025 85) 100%);overflow:hidden;">
+    <div style="max-width:1180px;margin:0 auto;display:grid;grid-template-columns:minmax(280px,1fr) minmax(320px,1fr);gap:48px;align-items:center;">
+      <div>
+        <div style="display:inline-block;font-family:'Quicksand',sans-serif;font-weight:600;font-size:14px;letter-spacing:1.5px;text-transform:uppercase;color:oklch(0.55 0.1 60);margin-bottom:14px;">A Family Homestead &middot; Est. by Heather Johnston</div>
+        <h1 style="font-family:'Quicksand',sans-serif;font-weight:700;font-size:clamp(36px,5vw,58px);line-height:1.05;margin:0 0 18px;color:oklch(0.32 0.04 195);">Small Farm, Big Personalities.</h1>
+        <p style="font-size:19px;line-height:1.6;color:oklch(0.35 0.03 55);max-width:520px;margin:0 0 28px;">We raise laid-back miniature zebu under swaying palms &mdash; friendly, sturdy little cattle with mile-long horns and even longer naps. Come meet the herd.</p>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;">
+          <a href="#animals" style="background:oklch(0.5 0.08 195);color:oklch(0.99 0.01 85);font-family:'Quicksand',sans-serif;font-weight:600;font-size:16px;padding:14px 28px;border-radius:999px;box-shadow:0 4px 14px oklch(0.5 0.08 195 / 0.35);">See Who's Available</a>
+          <a href="#about" style="background:transparent;border:2px solid oklch(0.55 0.1 60);color:oklch(0.4 0.1 55);font-family:'Quicksand',sans-serif;font-weight:600;font-size:16px;padding:12px 26px;border-radius:999px;">Our Story</a>
+        </div>
+      </div>
+      <div style="position:relative;">
+        <div style="aspect-ratio:4/3;border-radius:24px;overflow:hidden;box-shadow:0 20px 40px oklch(0.3 0.05 195 / 0.25);">
+          <img src="uploads/Scattered Oaks Farm 3.jpg" alt="Zebu herd running across the pasture" style="width:100%;height:100%;object-fit:cover;"/>
+        </div>
+        <div style="position:absolute;bottom:-18px;left:-18px;background:oklch(0.6 0.1 60);color:oklch(0.99 0.01 85);font-family:'Quicksand',sans-serif;font-weight:700;padding:14px 20px;border-radius:16px;font-size:15px;transform:rotate(-4deg);animation:bob 4s ease-in-out infinite;box-shadow:0 8px 20px oklch(0.4 0.08 60 / 0.3);">🐂 38 head strong</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about" style="padding:80px 28px;background:oklch(0.99 0.01 85);">
+    <div style="max-width:1180px;margin:0 auto;display:grid;grid-template-columns:minmax(280px,1fr) minmax(320px,1.2fr);gap:52px;align-items:center;">
+      <div style="aspect-ratio:1/1;border-radius:24px;overflow:hidden;">
+        <img src="uploads/Scattered Oaks Farm.jpg" alt="Evening at Scattered Oaks Farms" style="width:100%;height:100%;object-fit:cover;"/>
+      </div>
+      <div>
+        <div style="font-family:'Quicksand',sans-serif;font-weight:600;font-size:14px;letter-spacing:1.5px;text-transform:uppercase;color:oklch(0.5 0.08 195);margin-bottom:10px;">About the Farm</div>
+        <h2 style="font-family:'Quicksand',sans-serif;font-weight:700;font-size:clamp(28px,3.5vw,40px);margin:0 0 18px;color:oklch(0.32 0.04 195);">Scattered Oaks Farms</h2>
+        <p style="font-size:17px;line-height:1.7;color:oklch(0.35 0.03 55);margin:0 0 16px;">Scattered Oaks Farms is a DBA of Heather Johnston, run out of a sun-warmed patch of Bradenton, Florida pasture where the oaks are wide, the palms lean sideways, and the cattle are miniature. What started as two zebu and a dream has grown into a herd of 38 &mdash; 35 cows and 3 bulls &mdash; each one unique, with their own personality, and more than a little spoiled.</p>
+        <p style="font-size:17px;line-height:1.7;color:oklch(0.35 0.03 55);margin:0;">We fell for miniature zebu because they're gentle enough for a front porch and hardy enough for the heat. Every animal here is raised on pasture, handled daily, and treated like family &mdash; which is exactly how we hope they'll be treated wherever they land next.</p>
+        <div style="display:flex;gap:28px;margin-top:28px;flex-wrap:wrap;">
+          <div><div style="font-family:'Quicksand',sans-serif;font-weight:700;font-size:26px;color:oklch(0.5 0.08 195);">35</div><div style="font-size:13px;color:oklch(0.45 0.02 55);">Cows &amp; Calves</div></div>
+          <div><div style="font-family:'Quicksand',sans-serif;font-weight:700;font-size:26px;color:oklch(0.5 0.08 195);">3</div><div style="font-size:13px;color:oklch(0.45 0.02 55);">Herd Bulls</div></div>
+          <div><div style="font-family:'Quicksand',sans-serif;font-weight:700;font-size:26px;color:oklch(0.5 0.08 195);">100%</div><div style="font-size:13px;color:oklch(0.45 0.02 55);">Pasture Raised</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AVAILABLE ANIMALS -->
+  <section id="animals" style="padding:80px 28px;background:oklch(0.93 0.03 80);">
+    <div style="max-width:1180px;margin:0 auto;">
+      <div style="text-align:center;margin-bottom:14px;">
+        <div style="font-family:'Quicksand',sans-serif;font-weight:600;font-size:14px;letter-spacing:1.5px;text-transform:uppercase;color:oklch(0.5 0.08 195);">The Herd</div>
+        <h2 style="font-family:'Quicksand',sans-serif;font-weight:700;font-size:clamp(28px,3.5vw,40px);margin:8px 0 12px;color:oklch(0.32 0.04 195);">Available Miniature Zebu</h2>
+        <p style="font-size:16px;color:oklch(0.4 0.03 55);max-width:560px;margin:0 auto;">A featured look at our 38-head herd &mdash; from ready-to-go to reserved for keeps.</p>
+      </div>
+
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:28px 0 36px;">
+        <button onClick="{{ setFilter_forsale }}" style="{{ tabStyle_forsale }}">For Sale</button>
+        <button onClick="{{ setFilter_pending }}" style="{{ tabStyle_pending }}">Pending</button>
+        <button onClick="{{ setFilter_soon }}" style="{{ tabStyle_soon }}">Coming Soon</button>
+        <button onClick="{{ setFilter_herd }}" style="{{ tabStyle_herd }}">Not For Sale</button>
+        <button onClick="{{ setFilter_all }}" style="{{ tabStyle_all }}">View All</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:26px;">
+        <sc-for list="{{ filteredAnimals }}" as="animal" hint-placeholder-count="6">
+          <div onDoubleClick="{{ animal.openFn }}" style="background:oklch(0.99 0.01 85);border-radius:18px;overflow:hidden;box-shadow:0 6px 18px oklch(0.3 0.04 60 / 0.1);display:flex;flex-direction:column;cursor:pointer;">
+            <div style="aspect-ratio:4/3;background:{{ animal.stripe }};display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;">
+              <sc-if value="{{ animal.hasImage }}" hint-placeholder-val="{{ false }}">
+                <img src="{{ animal.image }}" alt="{{ animal.name }}" style="width:100%;height:100%;object-fit:cover;"/>
+              </sc-if>
+              <sc-if value="{{ animal.noImage }}" hint-placeholder-val="{{ true }}">
+                <div style="background:oklch(0.98 0.01 85 / 0.9);padding:8px 14px;border-radius:8px;font-family:ui-monospace,monospace;font-size:11px;color:oklch(0.3 0.03 55);">PHOTO: {{ animal.name }}</div>
+              </sc-if>
+              <div style="position:absolute;top:12px;left:12px;background:{{ animal.badgeBg }};color:{{ animal.badgeColor }};font-family:'Quicksand',sans-serif;font-weight:700;font-size:12px;padding:5px 12px;border-radius:999px;">{{ animal.badgeLabel }}</div>
+            </div>
+            <div style="padding:20px;display:flex;flex-direction:column;gap:6px;flex:1;">
+              <div style="display:flex;justify-content:space-between;align-items:baseline;">
+                <h3 style="font-family:'Quicksand',sans-serif;font-weight:700;font-size:20px;margin:0;color:oklch(0.32 0.04 195);">{{ animal.name }}</h3>
+                <span style="font-family:'Quicksand',sans-serif;font-weight:700;font-size:17px;color:oklch(0.55 0.1 60);">{{ animal.priceLabel }}</span>
+              </div>
+              <div style="font-size:13px;color:oklch(0.45 0.02 55);">{{ animal.type }} &middot; {{ animal.age }}</div>
+              <p style="font-size:14px;line-height:1.5;color:oklch(0.4 0.02 55);margin:8px 0 14px;">{{ animal.blurb }}</p>
+              <sc-if value="{{ animal.canInquire }}" hint-placeholder-val="{{ true }}">
+                <a href="#contact-form" onClick="{{ animal.chooseFn }}" style="margin-top:auto;text-align:center;background:oklch(0.5 0.08 195);color:oklch(0.99 0.01 85);font-family:'Quicksand',sans-serif;font-weight:600;font-size:14px;padding:10px 0;border-radius:999px;">Ask About {{ animal.name }}</a>
+              </sc-if>
+              <sc-if value="{{ animal.notForSale }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:auto;text-align:center;font-size:13px;color:oklch(0.45 0.02 55);font-style:italic;padding:10px 0;">Part of our permanent herd</div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <!-- ANIMAL LIGHTBOX -->
+  <sc-if value="{{ isModalOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeModalFn }}" style="position:fixed;inset:0;z-index:100;background:oklch(0.15 0.02 50 / 0.85);display:flex;align-items:center;justify-content:center;padding:24px;">
+      <div onClick="{{ stopClickFn }}" style="background:oklch(0.99 0.01 85);border-radius:20px;max-width:920px;width:100%;max-height:90vh;overflow:auto;display:grid;grid-template-columns:minmax(280px,1.3fr) minmax(260px,1fr);">
+        <div style="position:relative;background:oklch(0.2 0.02 50);display:flex;align-items:center;justify-content:center;min-height:320px;">
+          <sc-if value="{{ modalAnimal.isImage }}" hint-placeholder-val="{{ true }}">
+            <img src="{{ modalAnimal.currentSrc }}" alt="{{ modalAnimal.name }}" style="width:100%;height:100%;max-height:70vh;object-fit:contain;"/>
+          </sc-if>
+          <sc-if value="{{ modalAnimal.isVideo }}" hint-placeholder-val="{{ false }}">
+            <video key="{{ modalAnimal.currentSrc }}" src="{{ modalAnimal.currentSrc }}" controls="{{ true }}" playsInline="{{ true }}" preload="auto" style="width:100%;height:100%;max-height:70vh;object-fit:contain;background:#000;"></video>
+          </sc-if>
+          <sc-if value="{{ modalAnimal.noPhotos }}" hint-placeholder-val="{{ false }}">
+            <div style="color:oklch(0.8 0.02 85);font-family:ui-monospace,monospace;font-size:13px;">No photo available</div>
+          </sc-if>
+          <sc-if value="{{ modalAnimal.showNav }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ modalAnimal.prevFn }}" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:999px;border:none;background:oklch(0.99 0.01 85 / 0.85);font-size:18px;cursor:pointer;">&larr;</button>
+            <button onClick="{{ modalAnimal.nextFn }}" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);width:38px;height:38px;border-radius:999px;border:none;background:oklch(0.99 0.01 85 / 0.85);font-size:18px;cursor:pointer;">&rarr;</button>
+            <div style="position:absolute;bottom:12px;right:12px;background:oklch(0.15 0.02 50 / 0.6);color:oklch(0.98 0.01 85);font-size:12px;padding:4px 10px;border-radius:999px;">{{ modalAnimal.photoCounter }}</div>
+          </sc-if>
+        </div>
+        <div style="padding:30px;display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+            <h3 style="font-family:'Quicksand',sans-serif;font-weight:700;font-size:26px;margin:0;color:oklch(0.32 0.04 195);">{{ modalAnimal.name }}</h3>
+            <button onClick="{{ closeModalFn }}" style="border:none;background:oklch(0.9 0.02 80);width:32px;height:32px;border-radius:999px;cursor:pointer;font-size:16px;">&times;</button>
+          </div>
+          <div style="display:inline-block;background:{{ modalAnimal.badgeBg }};color:{{ modalAnimal.badgeColor }};font-family:'Quicksand',sans-serif;font-weight:700;font-size:12px;padding:5px 12px;border-radius:999px;width:fit-content;">{{ modalAnimal.badgeLabel }}</div>
+          <div style="font-size:15px;color:oklch(0.45 0.02 55);">{{ modalAnimal.sex }} &middot; {{ modalAnimal.age }}</div>
+          <div style="font-family:'Quicksand',sans-serif;font-weight:700;font-size:22px;color:oklch(0.55 0.1 60);">{{ modalAnimal.priceLabel }}</div>
+          <p style="font-size:15px;line-height:1.6;color:oklch(0.4 0.02 55);">{{ modalAnimal.blurb }}</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;background:oklch(0.96 0.02 85);border-radius:12px;padding:14px 16px;margin:4px 0;">
+            <div><div style="font-family:'Quicksand',sans-serif;font-weight:700;font-size:11px;letter-spacing:0.6px;text-transform:uppercase;color:oklch(0.5 0.08 195);">Barn Name</div><div style="font-size:14px;color:oklch(0.35 0.03 55);">{{ modalAnimal.barnName }}</div></div>
+            <div><div style="font-family:'Quicksand',sans-serif;font-weight:700;font-size:11px;letter-spacing:0.6px;text-transform:uppercase;color:oklch(0.5 0.08 195);">Registered Name</div><div style="font-size:14px;color:oklch(0.35 0.03 55);">{{ modalAnimal.registeredName }}</div></div>
+            <div><div style="font-family:'Quicksand',sans-serif;font-weight:700;font-size:11px;letter-spacing:0.6px;text-transform:uppercase;color:oklch(0.5 0.08 195);">IMZA#</div><div style="font-size:14px;color:oklch(0.35 0.03 55);">{{ modalAnimal.imzaNumber }}</div></div>
+            <div><div style="font-family:'Quicksand',sans-serif;font-weight:700;font-size:11px;letter-spacing:0.6px;text-transform:uppercase;color:oklch(0.5 0.08 195);">Expected Height</div><div style="font-size:14px;color:oklch(0.35 0.03 55);">{{ modalAnimal.expectedHeight }}</div></div>
+            <div style="grid-column:1 / -1;"><div style="font-family:'Quicksand',sans-serif;font-weight:700;font-size:11px;letter-spacing:0.6px;text-transform:uppercase;color:oklch(0.5 0.08 195);">Parents (Registered)</div><div style="font-size:14px;color:oklch(0.35 0.03 55);">{{ modalAnimal.parentsLine }}</div></div>
+          </div>
+          <sc-if value="{{ modalAnimal.canInquire }}" hint-placeholder-val="{{ true }}">
+            <a href="#contact-form" onClick="{{ chooseFromModalFn }}" style="margin-top:auto;text-align:center;background:oklch(0.5 0.08 195);color:oklch(0.99 0.01 85);font-family:'Quicksand',sans-serif;font-weight:600;font-size:15px;padding:12px 0;border-radius:999px;">Ask About {{ modalAnimal.name }}</a>
+          </sc-if>
+          <sc-if value="{{ modalAnimal.notForSale }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:auto;text-align:center;font-size:13px;color:oklch(0.45 0.02 55);font-style:italic;padding:10px 0;">Part of our permanent herd</div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- GALLERY LIGHTBOX -->
+  <sc-if value="{{ isGalleryModalOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeGalleryFn }}" style="position:fixed;inset:0;z-index:100;background:oklch(0.15 0.02 50 / 0.85);display:flex;align-items:center;justify-content:center;padding:24px;">
+      <div onClick="{{ stopClickFn }}" style="background:oklch(0.99 0.01 85);border-radius:20px;max-width:820px;width:100%;max-height:90vh;overflow:auto;">
+        <div style="position:relative;background:oklch(0.2 0.02 50);display:flex;align-items:center;justify-content:center;min-height:320px;">
+          <img src="{{ openGalleryPhotoData.src }}" alt="{{ openGalleryPhotoData.label }}" style="width:100%;max-height:65vh;object-fit:contain;"/>
+          <button onClick="{{ closeGalleryFn }}" style="position:absolute;top:12px;right:12px;border:none;background:oklch(0.99 0.01 85 / 0.85);width:32px;height:32px;border-radius:999px;cursor:pointer;font-size:16px;">&times;</button>
+        </div>
+        <div style="padding:24px 28px;">
+          <h3 style="font-family:'Quicksand',sans-serif;font-weight:700;font-size:22px;margin:0 0 8px;color:oklch(0.32 0.04 195);">{{ openGalleryPhotoData.label }}</h3>
+          <p style="font-size:15px;line-height:1.6;color:oklch(0.4 0.02 55);margin:0;">{{ openGalleryPhotoData.description }}</p>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- GALLERY -->
+  <section id="gallery" style="padding:80px 28px;background:oklch(0.99 0.01 85);">
+    <div style="max-width:1180px;margin:0 auto;">
+      <div style="text-align:center;margin-bottom:36px;">
+        <div style="font-family:'Quicksand',sans-serif;font-weight:600;font-size:14px;letter-spacing:1.5px;text-transform:uppercase;color:oklch(0.5 0.08 195);">Follow Along</div>
+        <h2 style="font-family:'Quicksand',sans-serif;font-weight:700;font-size:clamp(28px,3.5vw,40px);margin:8px 0 12px;color:oklch(0.32 0.04 195);">Life on the Farm</h2>
+        <p style="font-size:16px;color:oklch(0.4 0.03 55);">More on Facebook <a href="https://www.facebook.com/profile.php?id=61580526135257" target="_blank" rel="noopener" style="font-weight:700;">Scattered Oaks Farm Miniature Zebu</a></p>
+      </div>
+      <div style="display:grid;grid-template-columns:{{ galleryGridCols }};gap:16px;">
+        <sc-for list="{{ galleryTiles }}" as="tile" hint-placeholder-count="6">
+          <div onDoubleClick="{{ tile.openFn }}" style="aspect-ratio:1/1;border-radius:14px;overflow:hidden;position:relative;cursor:pointer;">
+            <img src="{{ tile.src }}" alt="{{ tile.label }}" style="width:100%;height:100%;object-fit:cover;"/>
+            <div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(0deg, oklch(0.15 0.02 50 / 0.75), transparent);color:oklch(0.98 0.01 85);font-family:'Quicksand',sans-serif;font-weight:600;font-size:13px;padding:20px 12px 10px;">{{ tile.label }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact-form" style="padding:80px 28px;background:oklch(0.4 0.07 195);">
+    <div style="max-width:640px;margin:0 auto;">
+      <div style="text-align:center;margin-bottom:30px;">
+        <div style="font-family:'Quicksand',sans-serif;font-weight:600;font-size:14px;letter-spacing:1.5px;text-transform:uppercase;color:oklch(0.85 0.06 65);">Get In Touch</div>
+        <h2 style="font-family:'Quicksand',sans-serif;font-weight:700;font-size:clamp(28px,3.5vw,38px);margin:8px 0 12px;color:oklch(0.98 0.01 85);">Say Howdy to Heather</h2>
+        <p style="font-size:16px;color:oklch(0.9 0.02 195);">Questions about an animal, pricing, or just want to talk zebu? Drop a line below.</p>
+      </div>
+
+      <sc-if value="{{ submitted }}" hint-placeholder-val="{{ false }}">
+        <div style="background:oklch(0.99 0.01 85);border-radius:18px;padding:40px;text-align:center;">
+          <div style="font-size:40px;margin-bottom:12px;">🤠</div>
+          <h3 style="font-family:'Quicksand',sans-serif;font-weight:700;font-size:22px;margin:0 0 8px;color:oklch(0.32 0.04 195);">Thanks, partner!</h3>
+          <p style="font-size:15px;color:oklch(0.4 0.03 55);margin:0;">Heather will get back to you soon.</p>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ notSubmitted }}" hint-placeholder-val="{{ true }}">
+        <form onSubmit="{{ handleSubmit }}" style="background:oklch(0.99 0.01 85);border-radius:18px;padding:34px;display:flex;flex-direction:column;gap:16px;">
+          <div>
+            <label style="display:block;font-family:'Quicksand',sans-serif;font-weight:600;font-size:13px;margin-bottom:6px;color:oklch(0.32 0.04 195);">Name</label>
+            <input required="" type="text" placeholder="Your name" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;border:1.5px solid oklch(0.85 0.02 80);font-size:15px;font-family:'Nunito',sans-serif;"/>
+          </div>
+          <div>
+            <label style="display:block;font-family:'Quicksand',sans-serif;font-weight:600;font-size:13px;margin-bottom:6px;color:oklch(0.32 0.04 195);">Email</label>
+            <input required="" type="email" placeholder="you@example.com" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;border:1.5px solid oklch(0.85 0.02 80);font-size:15px;font-family:'Nunito',sans-serif;"/>
+          </div>
+          <div>
+            <label style="display:block;font-family:'Quicksand',sans-serif;font-weight:600;font-size:13px;margin-bottom:6px;color:oklch(0.32 0.04 195);">Interested In</label>
+            <select value="{{ selectedAnimal }}" onChange="{{ handleAnimalChange }}" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;border:1.5px solid oklch(0.85 0.02 80);font-size:15px;font-family:'Nunito',sans-serif;background:oklch(0.99 0.01 85);">
+              <option value="">General Inquiry</option>
+              <sc-for list="{{ inquiryOptions }}" as="opt" hint-placeholder-count="4">
+                <option value="{{ opt }}">{{ opt }}</option>
+              </sc-for>
+            </select>
+          </div>
+          <div>
+            <label style="display:block;font-family:'Quicksand',sans-serif;font-weight:600;font-size:13px;margin-bottom:6px;color:oklch(0.32 0.04 195);">Message</label>
+            <textarea required="" placeholder="Tell us a bit about what you're looking for..." rows="5" style="width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;border:1.5px solid oklch(0.85 0.02 80);font-size:15px;font-family:'Nunito',sans-serif;resize:vertical;"></textarea>
+          </div>
+          <button type="submit" style="margin-top:6px;background:oklch(0.5 0.08 195);color:oklch(0.99 0.01 85);font-family:'Quicksand',sans-serif;font-weight:700;font-size:16px;padding:14px 0;border:none;border-radius:999px;cursor:pointer;">Send Message</button>
+        </form>
+      </sc-if>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer style="padding:44px 28px;background:oklch(0.27 0.03 50);color:oklch(0.9 0.01 85);">
+    <div style="max-width:1180px;margin:0 auto;display:flex;flex-direction:column;align-items:center;text-align:center;gap:20px;flex-wrap:wrap;">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:14px;">
+        <img src="uploads/Scattered Oaks Logo-eb6f247a.png" alt="Scattered Oaks Farm logo" style="width:270px;height:270px;border-radius:50%;object-fit:cover;flex:none;"/>
+        <div>
+          <div style="font-family:'Quicksand',sans-serif;font-weight:700;font-size:18px;margin-bottom:4px;">Scattered Oaks Farms</div>
+          <div style="font-size:13px;color:oklch(0.7 0.02 85);">A DBA of Heather Johnston &middot; hello@scatteredoaksfarms.com</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <a href="https://www.facebook.com/profile.php?id=61580526135257" target="_blank" rel="noopener" style="width:38px;height:38px;border-radius:999px;background:oklch(0.4 0.05 55);color:oklch(0.98 0.01 85);display:flex;align-items:center;justify-content:center;font-family:'Quicksand',sans-serif;font-weight:700;font-size:13px;">FB</a>
+      </div>
+    </div>
+  </footer>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;$preview&quot;: {&quot;width&quot;: 1440, &quot;height&quot;: 1000},
+  &quot;showPublicPrices&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: true, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Pricing&quot;},
+  &quot;galleryStyle&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;grid&quot;, &quot;options&quot;: [&quot;grid&quot;, &quot;mosaic&quot;], &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Gallery&quot;}
+}">
+const ANIMALS = [
+  { id: 'daisy', name: 'Daisy', type: 'Cow', sex: 'Cow', age: '1 yr', status: 'for-sale', price: 2100, blurb: 'Young cow, friendly and food-motivated.', image: 'uploads/Daisy.jpg', photos: [{ type: 'image', src: 'uploads/Daisy.jpg' }] },
+  { id: 'molly', name: 'Molly', type: 'Cow', sex: 'Cow', age: '2 yrs', status: 'for-sale', price: 2500, blurb: 'Gentle, easy keeper who does great in a mixed herd.', image: 'uploads/Molly.jpg', photos: [{ type: 'image', src: 'uploads/Molly.jpg' }] },
+  { id: 'uma', name: 'Uma', type: 'Cow', sex: 'Cow', age: 'Adult', status: 'pending', price: 2600, blurb: 'Reserved &mdash; sale in progress with a lovely family.', image: 'uploads/Uma.jpg', photos: [{ type: 'image', src: 'uploads/Uma.jpg' }] },
+  { id: 'irish', name: 'Irish', type: 'Calf', sex: 'Bull Calf', age: '2 mo', status: 'coming-soon', price: 2200, blurb: 'A frisky, sweet-faced calf still on mama. Ready to go soon.', image: 'uploads/Irish.jpg', photos: [{ type: 'image', src: 'uploads/Irish.jpg' }] },
+  { id: 'coco', name: 'Coco', type: 'Calf', sex: 'Heifer Calf', age: '2 mo', status: 'coming-soon', price: 2200, blurb: 'Curious and cuddly, growing fast on pasture.', image: 'uploads/Coco.jpg', photos: [{ type: 'image', src: 'uploads/Coco.jpg' }, { type: 'image', src: 'uploads/Coco 2.jpg' }] },
+  { id: 'samson', name: 'Samson', type: 'Calf', sex: 'Bull Calf', age: '2 mo', status: 'coming-soon', price: 2300, blurb: 'A sturdy little calf with a big personality.', image: 'uploads/Samson.jpg', photos: [
+      { type: 'image', src: 'uploads/Samson.jpg' },
+      { type: 'image', src: 'uploads/Samson 2.jpg' },
+      { type: 'video', src: 'uploads/2e0516ef-cbb9-415e-b1b2-59d30546a071.mp4' },
+    ] },
+  { id: 'bug', name: 'Bug', type: 'Bull', sex: 'Bull', age: 'Adult', status: 'not-for-sale', price: null, blurb: 'A striking herd bull, always on the move.', image: 'uploads/Bug.jpg', photos: [{ type: 'image', src: 'uploads/Bug.jpg' }] },
+  { id: 'lucky', name: 'Lucky', type: 'Bull', sex: 'Bull', age: 'Adult', status: 'not-for-sale', price: null, blurb: 'Easygoing bull who loves visitors at the fence line.', image: 'uploads/Lucky.jpg', photos: [{ type: 'image', src: 'uploads/Lucky.jpg' }] },
+  { id: 'lightning', name: 'Lightning', type: 'Bull', sex: 'Bull', age: 'Adult', status: 'not-for-sale', price: null, blurb: 'A striking speckled bull with a calm, steady nature.', image: 'uploads/Lightning.jpg', photos: [{ type: 'image', src: 'uploads/Lightning.jpg' }] },
+  { id: 'baron', name: 'Baron', type: 'Calf', sex: 'Bull Calf', age: 'Newborn', status: 'coming-soon', price: 2200, blurb: 'A speckled newborn just settling in &mdash; ready to go soon.', image: 'uploads/Baron.jpg', photos: [{ type: 'image', src: 'uploads/Baron.jpg' }] },
+  { id: 'peanut', name: 'Peanut', type: 'Cow', sex: 'Cow', age: 'Adult', status: 'for-sale', price: 2400, blurb: 'A gentle, easygoing cow who gets along great with the herd.', image: 'uploads/Peanut.jpg', photos: [{ type: 'image', src: 'uploads/Peanut.jpg' }] },
+];
+
+const GALLERY_PHOTOS = [
+  { label: 'Mamma Needing Help', src: 'uploads/Mamma Needing Help.jpg', description: 'A late-night calving check under the heat lamp.' },
+  { label: 'Really Another Picture', src: 'uploads/Really Another Picture.jpg', description: 'Another day in the barn with the herd.' },
+  { label: 'Rescue Mission', src: 'uploads/Rescue Mission.jpg', description: 'A curious calf getting a helping hand.' },
+  { label: 'Scattered Oaks Farm 2', src: 'uploads/Scattered Oaks Farm 2.jpg', description: 'Evenings around the barn at Scattered Oaks.' },
+  { label: 'Where We Going', src: 'uploads/Where we going.jpg', description: 'Loading up for a trip off the farm.' },
+  { label: 'Cool Summer Drink', src: 'uploads/Cool Summer Drink.jpg', description: 'The herd cooling off at the water trough.' },
+  { label: 'Evilyn and Calf', src: 'uploads/Evilyn and calf.jpg', description: 'One of our girls looking after a newborn.' },
+  { label: 'Happy Easter', src: 'uploads/Happy Easter.jpg', description: 'Celebrating the holiday with the herd.' },
+  { label: 'Jeeping on the Farm', src: 'uploads/Jeeping on the Farm.jpg', description: 'The herd checking out the farm truck.' },
+];
+
+const BADGE = {
+  'for-sale': { label: 'For Sale', bg: 'oklch(0.5 0.08 195)', color: 'oklch(0.99 0.01 85)' },
+  'pending': { label: 'Sale Pending', bg: 'oklch(0.65 0.1 65)', color: 'oklch(0.99 0.01 85)' },
+  'coming-soon': { label: 'Coming Soon', bg: 'oklch(0.99 0.01 85)', color: 'oklch(0.55 0.1 60)' },
+  'not-for-sale': { label: 'Not For Sale', bg: 'oklch(0.55 0.02 50)', color: 'oklch(0.99 0.01 85)' },
+};
+
+class Component extends DCLogic {
+  state = { activeFilter: 'for-sale', selectedAnimal: '', submitted: false, openAnimalId: null, photoIdx: 0, openGalleryIdx: null };
+
+  openGalleryPhoto(i) { this.setState({ openGalleryIdx: i }); }
+  closeGalleryPhoto() { this.setState({ openGalleryIdx: null }); }
+
+  setFilter(f) { this.setState({ activeFilter: f }); }
+  chooseAnimal(name) { this.setState({ selectedAnimal: name }); }
+  handleAnimalChange(e) { this.setState({ selectedAnimal: e.target.value }); }
+  handleSubmit(e) { e.preventDefault(); this.setState({ submitted: true }); }
+  openAnimal(id) { this.setState({ openAnimalId: id, photoIdx: 0 }); }
+  closeModal() { this.setState({ openAnimalId: null }); }
+  nextPhoto(len) { this.setState(s => ({ photoIdx: (s.photoIdx + 1) % len })); }
+  prevPhoto(len) { this.setState(s => ({ photoIdx: (s.photoIdx - 1 + len) % len })); }
+
+  tabStyle(key) {
+    const active = this.state.activeFilter === key;
+    return {
+      fontFamily: "'Quicksand',sans-serif", fontWeight: 700, fontSize: '14px',
+      padding: '9px 20px', borderRadius: '999px', border: '2px solid oklch(0.5 0.08 195)',
+      cursor: 'pointer',
+      background: active ? 'oklch(0.5 0.08 195)' : 'transparent',
+      color: active ? 'oklch(0.99 0.01 85)' : 'oklch(0.4 0.08 195)',
+    };
+  }
+
+  renderVals() {
+    const { activeFilter, selectedAnimal, submitted } = this.state;
+    const showPrices = this.props.showPublicPrices ?? true;
+
+    const decorate = (a) => {
+      const b = BADGE[a.status];
+      return {
+        ...a,
+        badgeLabel: b.label, badgeBg: b.bg, badgeColor: b.color,
+        hasImage: !!a.image, noImage: !a.image, image: a.image || '',
+        stripe: a.stripe || 'repeating-linear-gradient(135deg, oklch(0.7 0.09 70) 0 20px, oklch(0.76 0.08 70) 20px 40px)',
+        priceLabel: a.status === 'not-for-sale' ? '' : (showPrices ? '$' + a.price.toLocaleString() : 'Inquire'),
+        canInquire: a.status !== 'not-for-sale',
+        notForSale: a.status === 'not-for-sale',
+        chooseFn: () => this.chooseAnimal(a.name),
+        openFn: () => this.openAnimal(a.id),
+      };
+    };
+
+    const { openAnimalId, photoIdx } = this.state;
+    const openSource = ANIMALS.find(a => a.id === openAnimalId);
+    let modalAnimal = null;
+    if (openSource) {
+      const b = BADGE[openSource.status];
+      const photos = (openSource.photos && openSource.photos.length) ? openSource.photos : null;
+      const safeIdx = photos ? photoIdx % photos.length : 0;
+      const current = photos ? photos[safeIdx] : null;
+      modalAnimal = {
+        name: openSource.name,
+        sex: openSource.sex || openSource.type,
+        age: openSource.age,
+        blurb: openSource.blurb,
+        barnName: openSource.barnName || openSource.name,
+        registeredName: openSource.registeredName || 'Ask Heather',
+        imzaNumber: openSource.imzaNumber || 'Ask Heather',
+        expectedHeight: openSource.expectedHeight || 'Ask Heather',
+        parentsLine: openSource.sireRegistered || openSource.damRegistered
+          ? (openSource.sireRegistered || 'Unknown sire') + ' x ' + (openSource.damRegistered || 'Unknown dam')
+          : 'Ask Heather',
+        badgeLabel: b.label, badgeBg: b.bg, badgeColor: b.color,
+        priceLabel: openSource.status === 'not-for-sale' ? '' : (showPrices ? '$' + openSource.price.toLocaleString() : 'Inquire'),
+        canInquire: openSource.status !== 'not-for-sale',
+        notForSale: openSource.status === 'not-for-sale',
+        hasPhotos: !!photos,
+        noPhotos: !photos,
+        isVideo: !!current && current.type === 'video',
+        isImage: !!current && current.type !== 'video',
+        currentSrc: current ? current.src : '',
+        photoCounter: photos ? (safeIdx + 1) + ' / ' + photos.length : '',
+        showNav: photos && photos.length > 1,
+        prevFn: () => this.prevPhoto(photos.length),
+        nextFn: () => this.nextPhoto(photos.length),
+      };
+    }
+
+    let list = ANIMALS;
+    if (activeFilter === 'herd') list = ANIMALS.filter(a => a.status === 'not-for-sale');
+    else if (activeFilter !== 'all') list = ANIMALS.filter(a => a.status === activeFilter);
+
+    const galleryMosaic = (this.props.galleryStyle ?? 'grid') === 'mosaic';
+    const galleryTiles = GALLERY_PHOTOS;
+
+    return {
+      filteredAnimals: list.map(decorate),
+      inquiryOptions: ANIMALS.filter(a => a.status !== 'not-for-sale').map(a => a.name),
+      selectedAnimal, submitted, notSubmitted: !submitted,
+      handleAnimalChange: (e) => this.handleAnimalChange(e),
+      handleSubmit: (e) => this.handleSubmit(e),
+      setFilter_forsale: () => this.setFilter('for-sale'),
+      setFilter_pending: () => this.setFilter('pending'),
+      setFilter_soon: () => this.setFilter('coming-soon'),
+      setFilter_herd: () => this.setFilter('herd'),
+      setFilter_all: () => this.setFilter('all'),
+      tabStyle_forsale: this.tabStyle('for-sale'),
+      tabStyle_pending: this.tabStyle('pending'),
+      tabStyle_soon: this.tabStyle('coming-soon'),
+      tabStyle_herd: this.tabStyle('herd'),
+      tabStyle_all: this.tabStyle('all'),
+      galleryTiles: galleryTiles.map((t, i) => ({ ...t, openFn: () => this.openGalleryPhoto(i) })),
+      galleryGridCols: galleryMosaic ? 'repeat(auto-fit,minmax(160px,1fr))' : 'repeat(auto-fit,minmax(220px,1fr))',
+      isGalleryModalOpen: this.state.openGalleryIdx !== null,
+      openGalleryPhotoData: this.state.openGalleryIdx !== null ? galleryTiles[this.state.openGalleryIdx] : null,
+      closeGalleryFn: () => this.closeGalleryPhoto(),
+      isModalOpen: !!modalAnimal,
+      modalAnimal,
+      closeModalFn: () => this.closeModal(),
+      chooseFromModalFn: modalAnimal ? () => { this.chooseAnimal(modalAnimal.name); this.closeModal(); } : null,
+      stopClickFn: (e) => e.stopPropagation(),
+    };
+  }
+}
+</script>
+</body>
+</html>
