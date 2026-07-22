@@ -15,6 +15,7 @@ import { Hono } from 'hono';
 import type { HonoEnv } from '../types';
 import { requireSession, auditLog } from '../middleware';
 import { hashPassword, generateTempPassword, validatePasswordPolicy } from '../lib/password';
+import { sendEmail } from '../lib/email';
 
 type AdminRow = {
   id: string;
@@ -74,9 +75,16 @@ adminUsers.post('/', auditLog('user.create', 'admin'), async (c) => {
   )
     .bind(id, username, email, hash, salt, role)
     .run();
-  // TODO(M7): email `tempPassword` to `email` via Resend. Never returned by
-  // this endpoint — leaking a credential via API response, even in dev, is
-  // the same class of mistake auth.ts's forgot-password already avoids.
+  // [ADDED] 2026-07-22 (M7). tempPassword is never returned by this endpoint
+  // (leaking a credential via API response would be the same class of
+  // mistake auth.ts's forgot-password already avoids) — email is the only
+  // channel it goes out on. Awaited: no enumeration concern on this
+  // authenticated, admin-only endpoint.
+  await sendEmail(c.env.RESEND_API_KEY, {
+    to: email,
+    subject: 'Your Scattered Oaks Farms admin account',
+    html: `<p>An administrator account was created for you, username <strong>${username}</strong>.</p><p>Temporary password: <strong>${tempPassword}</strong></p><p>Sign in at <a href="https://scattered-oaks-zebu.com/admin">the admin panel</a> — you'll be required to set a new password on first login.</p>`,
+  });
 
   const admin = await c.env.DB.prepare(`SELECT ${ADMIN_LIST_COLUMNS} FROM admins WHERE id = ?`)
     .bind(id)

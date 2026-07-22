@@ -303,4 +303,38 @@ describe('animal media upload/delete', () => {
       await env.DB.prepare('DELETE FROM animals WHERE id = ?').bind(animalId).run();
     }
   });
+
+  // [ADDED] 2026-07-22 (M7) — Development-Plan.md's M7 test callout ("media
+  // upload validation (file type/size)"); the validation logic itself
+  // already existed from M6 (workers/lib/r2.ts's MAX_IMAGE_BYTES), this
+  // closes a real test-coverage gap rather than adding new production code.
+  it('rejects an image over the 10MB size limit', async () => {
+    const createRes = await req('POST', '/api/admin/animals', cookie, {
+      name: 'Media Too Big',
+      type: 'Cow',
+      sex: 'Cow',
+      status: 'for-sale',
+    });
+    const { id: animalId } = (await createRes.json()) as { id: string };
+    try {
+      const oversized = new Uint8Array(10 * 1024 * 1024 + 1);
+      const form = new FormData();
+      form.set('file', new File([oversized], 'huge.jpg', { type: 'image/jpeg' }));
+      form.set('media_type', 'image');
+
+      const res = await worker.fetch(
+        new Request(`http://example.com/api/admin/animals/${animalId}/media`, {
+          method: 'POST',
+          headers: { cookie },
+          body: form,
+        }),
+        env,
+      );
+      expect(res.status).toBe(400);
+      const body = (await res.json()) as { error: string };
+      expect(body.error).toMatch(/exceeds the 10MB limit/);
+    } finally {
+      await env.DB.prepare('DELETE FROM animals WHERE id = ?').bind(animalId).run();
+    }
+  });
 });

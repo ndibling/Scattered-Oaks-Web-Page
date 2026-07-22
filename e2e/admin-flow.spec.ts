@@ -10,6 +10,10 @@ import { fileURLToPath } from 'node:url';
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
 const TEST_IMAGE = path.join(dir, 'fixtures', 'test-photo.png');
+// 3000x2000 — well over src/lib/imageResize.ts's MAX_DIMENSION (2000), so an
+// upload of this fixture is a meaningful check that client-side pre-resize
+// (M7) actually ran, unlike TEST_IMAGE which is already tiny.
+const LARGE_TEST_IMAGE = path.join(dir, 'fixtures', 'large-test-photo.jpg');
 
 const ROOT_USERNAME = 'Root';
 const ROOT_PASSWORD = 'DevRoot!2026';
@@ -67,8 +71,16 @@ test('admin can log in, edit content, manage an animal, manage the gallery, togg
   await newAnimalRow.getByRole('button', { name: 'Edit' }).click();
   await expect(page.getByRole('heading', { name: `Edit ${animalName}` })).toBeVisible();
 
-  await page.locator('.animal-editor-media input[type="file"]').setInputFiles(TEST_IMAGE);
-  await expect(page.locator('.animal-editor-media-item img')).toBeVisible();
+  await page.locator('.animal-editor-media input[type="file"]').setInputFiles(LARGE_TEST_IMAGE);
+  const uploadedImg = page.locator('.animal-editor-media-item img');
+  await expect(uploadedImg).toBeVisible();
+  // Confirms resizeImageFile (M7) actually ran client-side before upload —
+  // the fixture is 3000x2000, well over MAX_DIMENSION.
+  await expect
+    .poll(() => uploadedImg.evaluate((img: HTMLImageElement) => img.naturalWidth))
+    .toBeGreaterThan(0);
+  const naturalWidth = await uploadedImg.evaluate((img: HTMLImageElement) => img.naturalWidth);
+  expect(naturalWidth).toBeLessThanOrEqual(2000);
 
   await page.getByRole('button', { name: '← Back to list' }).click();
   await page

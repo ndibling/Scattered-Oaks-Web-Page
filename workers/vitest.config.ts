@@ -27,7 +27,22 @@ export default defineConfig(async () => {
         miniflare: {
           // Test-only bindings so the setup file can apply schema + seed data
           // to each test's isolated D1 storage before tests run.
-          bindings: { TEST_MIGRATIONS: migrations, TEST_SEED_STATEMENTS: seedStatements },
+          // [ADDED] 2026-07-22 (M7) — RESEND_API_KEY/TURNSTILE_SECRET_KEY set
+          // explicitly here rather than relying on .dev.vars being picked up
+          // by cloudflareTest (unconfirmed whether it auto-loads that file
+          // the way `wrangler dev` does) — deterministic regardless of
+          // whether a given machine/CI runner has .dev.vars at all.
+          // TURNSTILE_SECRET_KEY is Cloudflare's real published "always
+          // passes" test secret (workers/lib/turnstile.test.ts hits the real
+          // siteverify endpoint with it, no mocking). RESEND_API_KEY is a
+          // placeholder — workers/lib/email.ts's tests stub global fetch
+          // rather than calling the real Resend API.
+          bindings: {
+            TEST_MIGRATIONS: migrations,
+            TEST_SEED_STATEMENTS: seedStatements,
+            RESEND_API_KEY: 'test-resend-key',
+            TURNSTILE_SECRET_KEY: '1x0000000000000000000000000000000AA',
+          },
         },
       }),
     ],

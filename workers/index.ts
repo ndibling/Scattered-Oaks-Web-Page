@@ -9,6 +9,7 @@ import { content } from './routes/content';
 import { settings } from './routes/settings';
 import { auth } from './routes/auth';
 import { media } from './routes/media';
+import { contact } from './routes/contact';
 import { adminAnimals } from './routes/adminAnimals';
 import { adminGallery } from './routes/adminGallery';
 import { adminContent } from './routes/adminContent';
@@ -27,11 +28,11 @@ app.route('/api/content', content);
 app.route('/api/settings', settings);
 app.route('/api/auth', auth);
 app.route('/media', media);
+app.route('/api/contact', contact);
 
 // M6: admin routes. Each router applies requireSession to itself via
 // `.use('*', requireSession)` and chains auditLog per mutating route — see
-// middleware.ts and each router for details. Contact-form spam gating lands
-// in M7.
+// middleware.ts and each router for details.
 app.route('/api/admin/animals', adminAnimals);
 app.route('/api/admin/gallery', adminGallery);
 app.route('/api/admin/content', adminContent);

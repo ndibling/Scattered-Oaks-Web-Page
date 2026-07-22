@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'preact/hooks';
 import { api } from '../lib/api';
 import type { Animal, AnimalDetail, AnimalInput, AnimalStatus } from '../lib/types';
+import { resizeImageFile } from '../lib/imageResize';
 import FileDropZone from './FileDropZone';
 
 const STATUS_OPTIONS: AnimalStatus[] = ['for-sale', 'pending', 'coming-soon', 'not-for-sale'];
@@ -106,8 +107,9 @@ export default function AnimalEditor() {
     if (!detail) return;
     setUploading(true);
     try {
+      const resized = await resizeImageFile(file);
       const form2 = new FormData();
-      form2.set('file', file);
+      form2.set('file', resized);
       form2.set('media_type', mediaType);
       const media = await api.uploadAnimalMedia(detail.id, form2);
       setDetail({ ...detail, media: [...detail.media, media] });

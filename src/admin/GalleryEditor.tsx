@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'preact/hooks';
 import { api } from '../lib/api';
 import type { GalleryPhoto } from '../lib/types';
+import { resizeImageFile } from '../lib/imageResize';
 import FileDropZone from './FileDropZone';
 
 export default function GalleryEditor() {
@@ -31,8 +32,9 @@ export default function GalleryEditor() {
     setError(null);
     setUploading(true);
     try {
+      const resized = await resizeImageFile(file);
       const form = new FormData();
-      form.set('file', file);
+      form.set('file', resized);
       form.set('label', newLabel.trim());
       await api.createGalleryPhoto(form);
       setNewLabel('');

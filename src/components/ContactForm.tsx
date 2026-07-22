@@ -1,4 +1,7 @@
+import { useState, useRef, useEffect } from 'preact/hooks';
 import type { Animal, SiteContent } from '../lib/types';
+import { api } from '../lib/api';
+import { TURNSTILE_SITE_KEY } from '../lib/turnstile';
 
 type Props = {
   content: SiteContent;
@@ -9,6 +12,43 @@ type Props = {
   onSubmit: () => void;
 };
 
+const TURNSTILE_SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
+const TURNSTILE_SCRIPT_ID = 'cf-turnstile-script';
+
+// Cloudflare's widget is loaded/rendered imperatively via its own global
+// `turnstile` object (no npm package exists for this) — declared minimally
+// here rather than adding a whole ambient-types file for one external API.
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (
+        container: HTMLElement,
+        options: { sitekey: string; callback: (token: string) => void },
+      ) => string;
+    };
+  }
+}
+
+function loadTurnstileScript(): Promise<void> {
+  return new Promise((resolve) => {
+    if (window.turnstile) {
+      resolve();
+      return;
+    }
+    const existing = document.getElementById(TURNSTILE_SCRIPT_ID) as HTMLScriptElement | null;
+    if (existing) {
+      existing.addEventListener('load', () => resolve());
+      return;
+    }
+    const script = document.createElement('script');
+    script.id = TURNSTILE_SCRIPT_ID;
+    script.src = TURNSTILE_SCRIPT_SRC;
+    script.async = true;
+    script.onload = () => resolve();
+    document.head.appendChild(script);
+  });
+}
+
 export default function ContactForm({
   content,
   animals,
@@ -18,6 +58,49 @@ export default function ContactForm({
   onSubmit,
 }: Props) {
   const inquiryOptions = animals.filter((a) => a.status !== 'not-for-sale').map((a) => a.name);
+
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const widgetRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (submitted) return;
+    let cancelled = false;
+    loadTurnstileScript().then(() => {
+      if (cancelled || !widgetRef.current || !window.turnstile) return;
+      window.turnstile.render(widgetRef.current, {
+        sitekey: TURNSTILE_SITE_KEY,
+        callback: (token) => setTurnstileToken(token),
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [submitted]);
+
+  async function handleSubmit(e: Event) {
+    e.preventDefault();
+    if (!turnstileToken) {
+      setError('Please complete the spam-check widget before submitting.');
+      return;
+    }
+    setError(null);
+    setSubmitting(true);
+    try {
+      const animalId = animals.find((a) => a.name === selectedAnimal)?.id;
+      await api.contact({ name, email, message, animalId, turnstileToken });
+      onSubmit();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Could not send your message.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   return (
     <section id="contact-form" class="contact-section">
@@ -35,21 +118,29 @@ export default function ContactForm({
             <p class="contact-thankyou-body">{content['contact.thankyou_body']}</p>
           </div>
         ) : (
-          <form
-            class="contact-form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              // Real submission (POST /api/contact + Turnstile verification) lands in M7.
-              onSubmit();
-            }}
-          >
+          <form class="contact-form" onSubmit={handleSubmit}>
+            {error && <div class="contact-error">{error}</div>}
             <div class="contact-field">
               <label for="contact-name">{content['contact.label_name']}</label>
-              <input id="contact-name" required type="text" placeholder="Your name" />
+              <input
+                id="contact-name"
+                required
+                type="text"
+                placeholder="Your name"
+                value={name}
+                onInput={(e) => setName((e.target as HTMLInputElement).value)}
+              />
             </div>
             <div class="contact-field">
               <label for="contact-email">{content['contact.label_email']}</label>
-              <input id="contact-email" required type="email" placeholder="you@example.com" />
+              <input
+                id="contact-email"
+                required
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onInput={(e) => setEmail((e.target as HTMLInputElement).value)}
+              />
             </div>
             <div class="contact-field">
               <label for="contact-animal">{content['contact.label_interested_in']}</label>
@@ -73,10 +164,13 @@ export default function ContactForm({
                 required
                 placeholder="Tell us a bit about what you're looking for..."
                 rows={5}
+                value={message}
+                onInput={(e) => setMessage((e.target as HTMLTextAreaElement).value)}
               />
             </div>
-            <button type="submit" class="contact-submit-btn">
-              {content['contact.label_submit']}
+            <div ref={widgetRef} class="contact-turnstile" />
+            <button type="submit" class="contact-submit-btn" disabled={submitting}>
+              {submitting ? 'Sending…' : content['contact.label_submit']}
             </button>
           </form>
         )}
@@ -144,6 +238,13 @@ export default function ContactForm({
           flex-direction: column;
           gap: 16px;
         }
+        .contact-error {
+          background: var(--color-danger-bg);
+          color: var(--color-danger);
+          border-radius: var(--radius-input);
+          padding: 10px 12px;
+          font-size: 14px;
+        }
         .contact-field label {
           display: block;
           font-family: var(--font-heading);
@@ -167,6 +268,10 @@ export default function ContactForm({
         .contact-field textarea {
           resize: vertical;
         }
+        .contact-turnstile {
+          display: flex;
+          justify-content: center;
+        }
         .contact-submit-btn {
           margin-top: 6px;
           background: var(--color-accent);
@@ -178,6 +283,10 @@ export default function ContactForm({
           border: none;
           border-radius: var(--radius-pill);
           cursor: pointer;
+        }
+        .contact-submit-btn:disabled {
+          opacity: 0.6;
+          cursor: default;
         }
       `}</style>
     </section>

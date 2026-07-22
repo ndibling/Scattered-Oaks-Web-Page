@@ -1,7 +1,17 @@
 import { env } from 'cloudflare:test';
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
 import worker from '../index';
 import { hashPassword } from '../lib/password';
+
+// POST /api/admin/users (M7) now emails the temp password via Resend on
+// every call — stub fetch globally in this file so tests don't make real
+// network calls (harmless no-op for tests that never reach that code path).
+beforeEach(() => {
+  vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 200 })));
+});
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 const ROOT_USERNAME = 'Root';
 const ROOT_PASSWORD = 'DevRoot!2026';
@@ -114,6 +124,33 @@ describe('POST /api/admin/users', () => {
         .bind(body.id)
         .first<{ action: string }>();
       expect(audit?.action).toBe('user.create');
+    } finally {
+      await deleteTempAdmin(body.id);
+    }
+  });
+
+  it('emails the temp password to the new admin (never in the JSON response)', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }));
+    vi.stubGlobal('fetch', fetchSpy);
+
+    const res = await req('POST', '/api/admin/users', rootCookie, {
+      username: 'emailed-admin',
+      email: 'emailed-admin@example.com',
+      role: 'admin',
+    });
+    expect(res.status).toBe(201);
+    const body = (await res.json()) as { id: string };
+
+    try {
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      const [url, init] = fetchSpy.mock.calls[0];
+      expect(url).toBe('https://api.resend.com/emails');
+      const emailBody = JSON.parse((init as RequestInit).body as string);
+      expect(emailBody.to).toEqual(['emailed-admin@example.com']);
+      // The temp password appears in the email body — that's the only
+      // channel it goes out on (already asserted absent from the JSON
+      // response in the test above).
+      expect(emailBody.html).toMatch(/Temporary password: <strong>.+<\/strong>/);
     } finally {
       await deleteTempAdmin(body.id);
     }

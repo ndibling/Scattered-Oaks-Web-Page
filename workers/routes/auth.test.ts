@@ -1,7 +1,13 @@
 import { env } from 'cloudflare:test';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import worker from '../index';
 import { hashPassword } from '../lib/password';
+
+// forgot-password (M7) now awaits an email send — stub fetch so these tests
+// don't make a real network call to Resend on every run.
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 const ROOT_USERNAME = 'Root';
 const ROOT_PASSWORD = 'DevRoot!2026';
@@ -163,6 +169,7 @@ describe('POST /api/auth/logout', () => {
 
 describe('POST /api/auth/forgot-password', () => {
   it('returns the same generic response whether or not the account exists', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 200 })));
     const known = await post('/api/auth/forgot-password', { email: ROOT_EMAIL });
     const unknown = await post('/api/auth/forgot-password', { email: 'nobody@example.com' });
     expect(known.status).toBe(200);
@@ -172,6 +179,7 @@ describe('POST /api/auth/forgot-password', () => {
   });
 
   it('creates a reset token for a known account', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 200 })));
     try {
       await post('/api/auth/forgot-password', { email: ROOT_EMAIL });
       const row = await env.DB.prepare(
@@ -187,6 +195,7 @@ describe('POST /api/auth/forgot-password', () => {
   });
 
   it('does not create a second token within the cooldown window', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 200 })));
     try {
       await post('/api/auth/forgot-password', { email: ROOT_EMAIL });
       await post('/api/auth/forgot-password', { email: ROOT_EMAIL });
@@ -197,6 +206,25 @@ describe('POST /api/auth/forgot-password', () => {
         .bind(ROOT_USERNAME)
         .first<{ c: number }>();
       expect(row?.c).toBe(1);
+    } finally {
+      await resetRootAccount();
+    }
+  });
+
+  it('emails a reset link for a known account, but attempts no email for an unknown one', async () => {
+    const fetchSpy = vi.fn().mockResolvedValue(new Response('{}', { status: 200 }));
+    vi.stubGlobal('fetch', fetchSpy);
+    try {
+      await post('/api/auth/forgot-password', { email: 'nobody@example.com' });
+      expect(fetchSpy).not.toHaveBeenCalled();
+
+      await post('/api/auth/forgot-password', { email: ROOT_EMAIL });
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+      const [url, init] = fetchSpy.mock.calls[0];
+      expect(url).toBe('https://api.resend.com/emails');
+      const body = JSON.parse((init as RequestInit).body as string);
+      expect(body.to).toEqual([ROOT_EMAIL]);
+      expect(body.html).toContain('/admin/reset-password?token=');
     } finally {
       await resetRootAccount();
     }
@@ -213,6 +241,7 @@ describe('POST /api/auth/reset-password', () => {
   });
 
   it('resets the password for a valid token, then rejects reuse of the same token', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{}', { status: 200 })));
     try {
       await post('/api/auth/forgot-password', { email: ROOT_EMAIL });
 

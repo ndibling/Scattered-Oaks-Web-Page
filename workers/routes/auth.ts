@@ -13,6 +13,7 @@ import {
   DUMMY_HASH_SALT,
 } from '../lib/password';
 import { generateRandomToken, hashToken } from '../lib/tokens';
+import { sendEmail } from '../lib/email';
 import {
   LOCKOUT_THRESHOLD,
   LOCKOUT_DURATION_MS,
@@ -194,7 +195,18 @@ auth.post('/forgot-password', async (c) => {
       )
         .bind(tokenHash, admin.id, expiresAt)
         .run();
-      // TODO(M7): send the reset link (containing `token`) via Resend.
+      // [ADDED] 2026-07-22 (M7). Awaited, not fire-and-forget: the
+      // enumeration-sensitive branch (does this email exist?) is already
+      // fully resolved by this point — the function returns the same
+      // generic response regardless — so awaiting adds latency but leaks
+      // nothing new, and a Workers fetch() risks cancellation once the
+      // response returns if not awaited (no waitUntil context here).
+      const resetUrl = `https://scattered-oaks-zebu.com/admin/reset-password?token=${token}`;
+      await sendEmail(c.env.RESEND_API_KEY, {
+        to: email,
+        subject: 'Reset your Scattered Oaks Farms admin password',
+        html: `<p>A password reset was requested for this account.</p><p><a href="${resetUrl}">Reset your password</a></p><p>This link expires shortly. If you didn't request this, you can ignore this email.</p>`,
+      });
     }
   }
 

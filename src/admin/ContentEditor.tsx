@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'preact/hooks';
 import { api } from '../lib/api';
 import type { SiteContent } from '../lib/types';
+import { resizeImageFile } from '../lib/imageResize';
 import FileDropZone from './FileDropZone';
 
 // Keys backed by an uploaded file rather than free text — mirrors
@@ -41,8 +42,9 @@ export default function ContentEditor() {
     setError(null);
     setSavingKey(key);
     try {
+      const resized = await resizeImageFile(file);
       const form = new FormData();
-      form.set('file', file);
+      form.set('file', resized);
       const { value } = await api.updateContentImage(key, form);
       setContent({ ...content, [key]: value });
       setDrafts({ ...drafts, [key]: value });

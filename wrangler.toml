@@ -9,6 +9,13 @@ account_id = "78698cbd5aa89fdf32f89b0fd6e83db3"
 [assets]
 directory = "./dist"
 
+# [ADDED] 2026-07-22 (M7) — plain, non-sensitive config (not a secret): where
+# public contact-form inquiries get emailed. RESEND_API_KEY/TURNSTILE_SECRET_KEY
+# stay out of this file entirely — real Worker secrets via `wrangler secret put`
+# (see SDD.md §6.5/§10), local dev value via .dev.vars (gitignored).
+[vars]
+OWNER_CONTACT_EMAIL = "heather.a.johnston@gmail.com"
+
 # Production (default/top-level environment — no --env flag, matches `npx wrangler deploy`).
 [[d1_databases]]
 binding = "DB"
@@ -23,6 +30,9 @@ bucket_name = "scattered-oaks-media"
 # Same binding names as production so application code (workers/index.ts, Astro API
 # helpers) never branches on environment — only the underlying resource differs.
 [env.preview]
+
+[env.preview.vars]
+OWNER_CONTACT_EMAIL = "heather.a.johnston@gmail.com"
 
 [[env.preview.d1_databases]]
 binding = "DB"

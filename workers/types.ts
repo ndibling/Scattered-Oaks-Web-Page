@@ -3,6 +3,12 @@
 export type Env = {
   DB: D1Database;
   MEDIA: R2Bucket;
+  // [ADDED] 2026-07-22 (M7). RESEND_API_KEY/TURNSTILE_SECRET_KEY are real
+  // Worker secrets (`wrangler secret put`, local value via .dev.vars).
+  // OWNER_CONTACT_EMAIL is a plain, non-sensitive wrangler.toml [vars] entry.
+  RESEND_API_KEY: string;
+  TURNSTILE_SECRET_KEY: string;
+  OWNER_CONTACT_EMAIL: string;
 };
 
 export type AuthedAdmin = {

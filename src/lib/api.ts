@@ -56,6 +56,13 @@ export const api = {
   gallery: () => getJson<GalleryPhoto[]>('/api/gallery'),
   content: () => getJson<SiteContent>('/api/content'),
   settings: () => getJson<SiteSettings>('/api/settings'),
+  contact: (body: {
+    name: string;
+    email: string;
+    message: string;
+    animalId?: string;
+    turnstileToken: string;
+  }) => sendJson<{ success: true }>('POST', '/api/contact', body),
 
   // Auth (M5/M6) — session is a same-origin cookie, sent automatically; no
   // client-side token handling needed.

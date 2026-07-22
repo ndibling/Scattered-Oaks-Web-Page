@@ -1,0 +1,12 @@
+# Copy this file to `.dev.vars` (gitignored) for local `wrangler dev`.
+# OWNER_CONTACT_EMAIL is NOT a secret — it lives in wrangler.toml's [vars].
+
+# Real key from https://resend.com/api-keys if you want local emails to
+# actually send; otherwise leave the placeholder — sendEmail() logs and
+# swallows failures rather than breaking the request.
+RESEND_API_KEY=re_local_dev_placeholder
+
+# Cloudflare's published "always passes" Turnstile test secret key — pairs
+# with the "always passes" test sitekey (1x00000000000000000000AA), which is
+# src/lib/turnstile.ts's default when PUBLIC_TURNSTILE_SITE_KEY is unset.
+TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
