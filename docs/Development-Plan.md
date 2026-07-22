@@ -47,7 +47,9 @@ Cloudflare Workers routes that don't require auth (SDD §4.1).
 - `GET /api/animals` (with `?status=` filter), `GET /api/animals/:id`, `GET /api/gallery`, `GET /api/content`, `GET /api/settings`.
 - All public animal queries filter `WHERE deleted_at IS NULL` — soft-deleted animals never appear on the public site.
 - Router + middleware skeleton (the same middleware layer M5 will extend with session auth, rate limiting, audit logging).
-- **Integration tests:** each endpoint against local D1 via `@cloudflare/vitest-pool-workers`.
+- **Integration tests:** each endpoint against local D1 via `@cloudflare/vitest-pool-workers`. Two setup notes for M5/M6, which will need the same test harness:
+  - Vitest 4 removed `vitest.workspace.ts` in favor of a `test.projects` array in the root `vitest.config.ts` — one inline project for plain-Node tests (`migrations/**`), one pointing at `workers/vitest.config.ts` for the actual Workers-runtime (Miniflare) tests, since the two need incompatible environments in one repo.
+  - `env.DB.exec()` (the D1 binding method, as opposed to `wrangler d1 execute --file`) splits input by newline, not by real statement boundaries, and chokes on comment-only lines. Multi-line `INSERT ... VALUES` formatting and `--` comments both break it. `workers/vitest.config.ts` works around this by stripping comments and splitting `seeds/sample-data.sql` into single-line statements, applied via `env.DB.batch()` in `workers/vitest.setup.ts` instead of `exec()`.
 - **Exit criteria:** all five public endpoints return real data from the seeded local D1, verified by integration tests.
 
 ### M4. Frontend — Public Site

@@ -22,6 +22,7 @@ function countAll(db: DatabaseSync) {
     animal_media: count('animal_media'),
     gallery_photos: count('gallery_photos'),
     site_settings: count('site_settings'),
+    site_content: count('site_content'),
   };
 }
 
@@ -96,7 +97,7 @@ describe('D1 schema (0001_initial_schema.sql)', () => {
 });
 
 describe('sample-data.sql seed', () => {
-  it('loads the expected 11 animals, 14 media rows, 9 gallery photos, 2 settings', () => {
+  it('loads the expected 11 animals, 14 media rows, 9 gallery photos, 2 settings, 40 content rows', () => {
     const db = freshDb();
     db.exec(seedSql);
     expect(countAll(db)).toEqual({
@@ -104,6 +105,7 @@ describe('sample-data.sql seed', () => {
       animal_media: 14,
       gallery_photos: 9,
       site_settings: 2,
+      site_content: 40,
     });
   });
 

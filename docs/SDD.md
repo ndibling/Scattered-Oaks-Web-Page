@@ -1,6 +1,6 @@
 # Scattered Oaks Farms — Software Design Description (SDD)
 
-**Version 1.4 (living document)** — originally authored as Version 1.0, July 19, 2026, as a Word document (`Scattered Oaks Farm Software Design Description.docx`, preserved in this folder as the frozen v1 baseline). This Markdown version is the living source of truth going forward: it is updated whenever implementation changes the actual design, per the workflow in `Development-Plan.md`.
+**Version 1.5 (living document)** — originally authored as Version 1.0, July 19, 2026, as a Word document (`Scattered Oaks Farm Software Design Description.docx`, preserved in this folder as the frozen v1 baseline). This Markdown version is the living source of truth going forward: it is updated whenever implementation changes the actual design, per the workflow in `Development-Plan.md`.
 
 This document describes the technical design of the Scattered Oaks Farms website, implementing the requirements defined in `Requirements.md` (formerly "Scattered Oaks Farms Website Requirements Specification" v2.1). It carries forward that document's provenance tags `[PDF]` / `[DESIGN]` / `[ADDED]` where a design decision traces directly to a specific requirement, and uses `[MANUAL SETUP]` for any one-time configuration step a human must perform by hand in GitHub, Cloudflare, or Resend — none of this can be scripted by CI on a brand-new account. Every `[MANUAL SETUP]` item also appears, in executable checklist form, in Section 10. `[AMENDED]` marks a design change made after implementation began (see change log at the bottom).
 
@@ -108,7 +108,9 @@ A single tokens module (colors as OKLCH values, the Quicksand/Nunito font stack,
 Public pages and the admin app call the Workers API for animals, gallery photos, site text, and settings — nothing is hardcoded at build time. This means an Administrator's edit appears on the live site immediately, with no rebuild/redeploy required. `[ADDED]`
 
 ## 4. Backend / API Design
-The Workers API is organized into route modules — auth, animals, content, settings, admins, contact, uploads — behind a small router, with shared middleware for session authentication, rate limiting, and audit logging on any state-changing admin request.
+The Workers API is organized into route modules — auth, animals, gallery, content, settings, admins, contact, uploads — behind a small router, with shared middleware for session authentication, rate limiting, and audit logging on any state-changing admin request. `[AMENDED]` 2026-07-21 — "gallery" was missing from this list (see §5.2a's change log entry, same root cause: the gallery feature was underspecified in the original SDD).
+
+The router is built on [Hono](https://hono.dev/) — the de facto standard for this on Cloudflare Workers, with first-class TypeScript support and lightweight middleware composition, matching this section's "small router, with shared middleware" design intent. `[ADDED]` 2026-07-21, chosen during M3 implementation; no framework was specified in the original SDD.
 
 ### 4.1 Public Endpoints
 
@@ -357,3 +359,4 @@ Entries added here whenever implementation causes a design decision to change fr
 - **2026-07-21** — §10 item 17: Sending domain confirmed as `mail.scattered-oaks-zebu.com` (resolves `Requirements.md` §15). Also switched the recommended verification path to Resend's Auto configure/Domain Connect integration, discovered while actually performing this step — it adds the DNS records automatically since the zone is already on Cloudflare, avoiding manual copy-paste.
 - **2026-07-21** — §10 item 15: Confirmed `wrangler secret put --env` requires a local `wrangler.toml` defining the Worker name and named environments — tried it ahead of M1 and got "Required Worker name missing" / "No environment found in configuration." Sequencing note only; no design change, just makes explicit that this step must follow M1, not just "the Worker existing remotely."
 - **2026-07-21** — §5.2a (new): added `gallery_photos` (id, url, label, description, display_order, timestamps). Discovered during M2 implementation that the original data design never actually defined a table backing `GET /api/gallery` or the design prototype's 9-item captioned gallery grid — an oversight in the original SDD, not a scope change.
+- **2026-07-21** — §4: adopted [Hono](https://hono.dev/) as the router library (no framework was specified originally); added "gallery" to the route-module list, the same oversight as the missing `gallery_photos` table above. Decided during M3 implementation.
