@@ -130,6 +130,9 @@ An Administrator logs in with a username and password to unlock a management int
 - Root and any Administrator can add, edit, or delete other Administrator accounts. `[PDF]`
 - The Root account itself cannot be deleted, and cannot be locked out permanently. `[ADDED]`
 - Standard username/password authentication for all Administrator accounts. `[PDF]`
+- **Only an actor who is already Root can create a new Administrator account with the `root` role, or promote an existing `admin`-role account to `root`. A regular Administrator can freely create, edit, and delete `admin`-role accounts, but cannot mint or grant Root access.** `[ADDED]` 2026-07-22 — taken literally, the first bullet above places no restriction on which role an admin can assign when managing another account, which would let any Administrator (even one created minutes earlier) create a second Root account or promote themselves. Confirmed with the project owner during M6 planning; resolves the open question logged in §15.
+
+Enforced by two 403 responses on `PUT`/`POST /api/admin/users` (SDD §4.3) — the first use of HTTP 403 in this API.
 
 #### 7.2.4 Password & Account Security
 - Password minimum length 8 characters, requiring at least 1 number, 1 lowercase letter, 1 uppercase letter, and 1 special character. `[PDF]`
@@ -279,6 +282,7 @@ The full test suite must pass before any deploy proceeds; a minimum coverage thr
 - What is the desired retention/export policy for old animal records after an animal is sold or removed? — **Resolved 2026-07-20:** soft delete (see §7.2.2, §10, and the change log).
 - Should there be more than two admin roles (e.g., a read-only or limited editor role) in the future, or is Root/Administrator sufficient long-term? — Open; deferred, out of scope for v1 (§14).
 - Confirm the outbound "from" email address/domain to authenticate with Resend. — **Resolved 2026-07-21:** `mail.scattered-oaks-zebu.com`. A dedicated subdomain rather than the bare root domain, so Resend's SPF/DKIM/DMARC records can't conflict with any existing email setup on `scattered-oaks-zebu.com`, and so the transactional-email sending reputation stays isolated from the main domain.
+- Can any Administrator grant the `root` role to an account, per §7.2.3's literal wording? — **Resolved 2026-07-22:** no — only an existing Root actor can create or promote an account into the `root` role (see §7.2.3's amendment). This is a distinct question from the role-count question above: it's about who can grant the *existing* two roles, not about adding a third role.
 
 ## Appendix A: Glossary
 
@@ -317,3 +321,4 @@ Entries added here whenever implementation causes a requirement to change from w
 
 - **2026-07-20** — §7.2.2, §10, §15: Animal deletion is a soft delete (`deleted_at` timestamp) rather than a hard row delete. Decided ahead of implementation to support future recoverability/export needs without a schema change later.
 - **2026-07-21** — §15: Resend's outbound sending domain confirmed as `mail.scattered-oaks-zebu.com`, resolving the last open question from the original analysis.
+- **2026-07-22** (M6) — §7.2.3, §15: closed an unstated privilege-escalation gap — only an actor who is already Root can create or promote an account into the `root` role; any Administrator can otherwise manage `admin`-role accounts freely, per the original text. Confirmed with the project owner during M6 planning.

@@ -21,6 +21,15 @@ function post(path: string, body: unknown, cookie?: string) {
   );
 }
 
+function get(path: string, cookie?: string) {
+  return worker.fetch(
+    new Request(`http://example.com${path}`, {
+      headers: cookie ? { cookie } : {},
+    }),
+    env,
+  );
+}
+
 function sessionCookieFrom(res: Response): string {
   const setCookie = res.headers.get('set-cookie');
   if (!setCookie) throw new Error('Response had no Set-Cookie header');
@@ -371,6 +380,36 @@ describe('POST /api/auth/change-password (forced first-login change)', () => {
         cookie,
       );
       expect(res.status).toBe(401);
+    } finally {
+      await resetRootAccount();
+    }
+  });
+});
+
+describe('GET /api/auth/me', () => {
+  it('rejects a request with no session cookie', async () => {
+    const res = await get('/api/auth/me');
+    expect(res.status).toBe(401);
+  });
+
+  it('returns the current admin for a valid session', async () => {
+    try {
+      const loginRes = await post('/api/auth/login', {
+        username: ROOT_USERNAME,
+        password: ROOT_PASSWORD,
+      });
+      const cookie = sessionCookieFrom(loginRes);
+
+      const res = await get('/api/auth/me', cookie);
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as {
+        username: string;
+        role: string;
+        forcePasswordChange: boolean;
+      };
+      expect(body.username).toBe(ROOT_USERNAME);
+      expect(body.role).toBe('root');
+      expect(body.forcePasswordChange).toBe(false);
     } finally {
       await resetRootAccount();
     }

@@ -16,6 +16,10 @@ const seedSql = readFileSync(path.join(dir, '..', 'seeds', 'sample-data.sql'), '
 
 function freshDb(): DatabaseSync {
   const db = new DatabaseSync(':memory:');
+  // D1 enforces foreign keys by default; node:sqlite does not unless asked,
+  // so this pragma keeps FK-behavior tests (e.g. 0003's ON DELETE SET NULL)
+  // meaningful against the same constraints production actually runs under.
+  db.exec('PRAGMA foreign_keys = ON');
   for (const file of migrationFiles) {
     db.exec(readFileSync(path.join(dir, file), 'utf-8'));
   }
@@ -135,8 +139,45 @@ describe('0002_add_admin_email.sql', () => {
   });
 });
 
+describe('0003_audit_log_admin_id_nullable.sql', () => {
+  let db: DatabaseSync;
+
+  beforeEach(() => {
+    db = freshDb();
+  });
+
+  it('sets admin_id to NULL (not a FK violation) when the referenced admin is deleted', () => {
+    db.prepare(
+      `INSERT INTO admins (id, username, email, password_hash, password_salt, role) VALUES (?, ?, ?, ?, ?, ?)`,
+    ).run('a1', 'someone', 'someone@example.com', 'hash', 'salt', 'admin');
+    db.prepare(
+      `INSERT INTO audit_log (id, admin_id, action, target_type, target_id, summary) VALUES (?, ?, ?, ?, ?, ?)`,
+    ).run('log1', 'a1', 'animal.create', 'animal', 'daisy', 'Created animal "Daisy"');
+
+    expect(() => db.prepare('DELETE FROM admins WHERE id = ?').run('a1')).not.toThrow();
+
+    const row = db.prepare('SELECT admin_id FROM audit_log WHERE id = ?').get('log1') as {
+      admin_id: unknown;
+    };
+    expect(row.admin_id).toBeNull();
+  });
+
+  it('still accepts audit_log rows with a real admin_id', () => {
+    db.prepare(
+      `INSERT INTO admins (id, username, email, password_hash, password_salt, role) VALUES (?, ?, ?, ?, ?, ?)`,
+    ).run('a1', 'someone', 'someone@example.com', 'hash', 'salt', 'admin');
+    db.prepare(
+      `INSERT INTO audit_log (id, admin_id, action, target_type, target_id, summary) VALUES (?, ?, ?, ?, ?, ?)`,
+    ).run('log1', 'a1', 'animal.create', 'animal', 'daisy', 'Created animal "Daisy"');
+    const row = db.prepare('SELECT admin_id FROM audit_log WHERE id = ?').get('log1') as {
+      admin_id: unknown;
+    };
+    expect(row.admin_id).toBe('a1');
+  });
+});
+
 describe('sample-data.sql seed', () => {
-  it('loads the expected 11 animals, 14 media rows, 9 gallery photos, 2 settings, 40 content rows', () => {
+  it('loads the expected 11 animals, 14 media rows, 9 gallery photos, 2 settings, 43 content rows', () => {
     const db = freshDb();
     db.exec(seedSql);
     expect(countAll(db)).toEqual({
@@ -144,7 +185,7 @@ describe('sample-data.sql seed', () => {
       animal_media: 14,
       gallery_photos: 9,
       site_settings: 2,
-      site_content: 40,
+      site_content: 43,
     });
   });
 

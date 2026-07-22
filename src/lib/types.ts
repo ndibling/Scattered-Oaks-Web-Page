@@ -48,6 +48,72 @@ export type SiteSettings = {
   galleryStyle: 'grid' | 'mosaic';
 };
 
+// [ADDED] 2026-07-22 (M6) — admin-facing shapes, matching the field names
+// (snake_case, matching DB columns) that workers/routes/admin*.ts return.
+
+export type AnimalInput = {
+  name: string;
+  registered_name?: string | null;
+  type: string;
+  sex: string;
+  age_text?: string | null;
+  status: AnimalStatus;
+  price_cents?: number | null;
+  description?: string | null;
+  imza_number?: string | null;
+  expected_height?: string | null;
+  sire_registered_name?: string | null;
+  dam_registered_name?: string | null;
+  display_order?: number;
+};
+
+export type GalleryPhotoInput = {
+  label: string;
+  description?: string | null;
+  display_order?: number;
+};
+
+export type AuthedAdmin = {
+  id: string;
+  username: string;
+  role: 'root' | 'admin';
+  forcePasswordChange: boolean;
+};
+
+export type AdminUser = {
+  id: string;
+  username: string;
+  email: string;
+  role: 'root' | 'admin';
+  force_password_change: number;
+  failed_login_count: number;
+  locked_until: string | null;
+  created_at: string;
+  last_login_at: string | null;
+};
+
+export type AdminUserInput = {
+  username: string;
+  email: string;
+  role: 'root' | 'admin';
+};
+
+export type AuditLogEntry = {
+  id: string;
+  admin_id: string | null;
+  admin_username: string | null;
+  action: string;
+  target_type: string;
+  target_id: string | null;
+  summary: string | null;
+  created_at: string;
+};
+
+export type AuditLogPage = {
+  results: AuditLogEntry[];
+  hasMore: boolean;
+};
+
 export const FILTER_TABS = [
   { key: 'for-sale', label: 'For Sale' },
   { key: 'pending', label: 'Pending' },

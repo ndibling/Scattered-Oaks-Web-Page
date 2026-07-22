@@ -77,14 +77,15 @@ Implements SDD §6.1–§6.3 exactly.
 
 ### M6. Frontend + Backend — Admin CMS
 The `/admin` SPA and its remaining authenticated endpoints (SDD §3.1, §4.3).
-- Admin endpoints: animal CRUD + reorder + media upload/delete, `content/:key` edit, `settings` update, admin user CRUD, audit log read.
+- Admin endpoints: animal CRUD + reorder + media upload/delete, `content/:key` edit (including the 3 new image-backed keys), `settings` update, admin user CRUD, audit log read. `[AMENDED]` 2026-07-22 — plus **gallery photo CRUD + reorder** (`/api/admin/gallery`), an approved scope addition: `gallery_photos` existed with a public `GET /api/gallery` since M2 but no admin management anywhere in the original scope.
 - `DELETE /api/admin/animals/:id` is a soft delete: sets `deleted_at`, does not remove the row or its `animal_media` children. The client confirmation step (requirements §7.2.2) still applies before the request fires. Admin list views can offer a "show deleted" toggle to view/restore later if wanted, but that's not required for v1 — only the column and the filtering behavior are.
-- Admin components: AdminLogin, AdminShell (nav + route guard), AnimalEditor (form + media manager), ContentEditor (in-place fields), SiteSettingsPanel, AdminUserManager, AuditLogView.
+- Admin components: AdminLogin, AdminShell (nav + route guard), AnimalEditor (form + media manager), ContentEditor (in-place fields), SiteSettingsPanel, AdminUserManager, AuditLogView. `[AMENDED]` 2026-07-22 — plus **GalleryEditor** (gallery scope addition above), **AdminResetPassword** (`src/pages/admin/reset-password.astro` — the one `/admin/*` URL that's a real page, not an `AdminShell` view, since it's reached via an emailed link), and **AdminForcePasswordChange** (blocking view for the forced first-login password change, already backed by M5's `force_password_change` flag but never listed as a component to build).
 - Audit logging middleware fires on every state-changing admin request (requirements §7.2.4).
-- Root-account protections: cannot be deleted, cannot be permanently locked out, can force-reset another admin's password.
+- Root-account protections: cannot be deleted, cannot be permanently locked out, can force-reset another admin's password. `[AMENDED]` 2026-07-22 — plus: only Root can create/promote an account into the `root` role (Requirements §7.2.3/§15).
+- A required migration beyond schema already covering M6 (`gallery_photos`/`admins`/`site_content` needed no new columns): **`migrations/0003_audit_log_admin_id_nullable.sql`** — `audit_log.admin_id` had no `ON DELETE` clause, so once real audit logging is live, deleting any admin with a logged action would hit a foreign-key violation. Made nullable with `ON DELETE SET NULL` instead.
 - **Integration tests:** every admin endpoint, including audit-log entries being written on each mutation.
-- **E2E tests, admin flow:** login → edit a text field → replace an image → add/edit/delete an animal → toggle a site setting.
-- **Exit criteria:** an admin can fully manage content/animals/settings/other-admins locally, with every mutation reflected in the audit log.
+- **E2E tests, admin flow:** login → edit a text field → replace an image → add/edit/delete an animal → add/edit/delete a gallery photo → toggle a site setting.
+- **Exit criteria:** an admin can fully manage content/animals/gallery/settings/other-admins locally, with every mutation reflected in the audit log.
 
 ### M7. Integrations — Media, Spam, Email
 Wires the three external services into what M4/M5/M6 built, still against local/dev credentials.
@@ -147,6 +148,7 @@ From Requirements §15 — none of these block M1–M8, but should be resolved b
 | Retention/export policy for sold/removed animals | Resolved 2026-07-20 | **Soft delete.** `animals.deleted_at` (nullable timestamp) added beyond SDD §5.1; `DELETE /api/admin/animals/:id` sets it instead of removing the row; all public queries filter it out. Amends the SDD schema — noted here since the SDD itself is a static .docx. |
 | More than two admin roles (read-only/limited editor) in the future | Post-launch | Out of scope for v1 per requirements §14; no action needed now. |
 | Confirm Resend sending domain (e.g. `mail.scattered-oaks-zebu.com`) | B3 | Needed to actually verify the domain in Resend. |
+| Can any Administrator grant the `root` role? | Resolved 2026-07-22 | **No — Root-only.** Requirements §7.2.3's literal text let any admin assign any role when managing other accounts; restricted to Root-only for granting/creating `root`-role accounts. See Requirements.md §7.2.3/§15. |
 
 ## Milestone → Requirements traceability
 

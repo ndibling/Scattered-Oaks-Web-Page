@@ -14,7 +14,11 @@ export default function About({ content }: Props) {
     <section id="about" class="about">
       <div class="about-inner">
         <div class="about-photo">
-          <img src="/uploads/Scattered Oaks Farm.jpg" alt="Evening at Scattered Oaks Farms" />
+          {/* [AMENDED] 2026-07-22 (M6) — reads site_content['about.photo_url'], admin-replaceable via ContentEditor. */}
+          <img
+            src={content['about.photo_url'] ?? '/uploads/Scattered Oaks Farm.jpg'}
+            alt="Evening at Scattered Oaks Farms"
+          />
         </div>
         <div>
           <div class="about-eyebrow">{content['about.eyebrow']}</div>

@@ -86,13 +86,10 @@ Astro is used as the site generator: pages are static HTML by default (fast, SEO
 | Route | Purpose | Rendering |
 |---|---|---|
 | `/` | Public single-page site: Hero, About, Available Animals, Gallery, Contact (anchor-navigated, matching the approved design). | Static shell (meta tags, fonts) + one hydrated island rendering the entire visible page. `[AMENDED]` 2026-07-21 — see §3.4. |
-| `/admin/login` | Administrator login form. | Hydrated island. |
-| `/admin` | Admin dashboard landing. | Client-rendered, auth-gated. |
-| `/admin/animals` | Animal list, add/edit/delete, reorder. | Client-rendered, auth-gated. |
-| `/admin/content` | Edit site text fields in place. | Client-rendered, auth-gated. |
-| `/admin/settings` | Toggle `showPublicPrices` / `galleryStyle`. | Client-rendered, auth-gated. |
-| `/admin/users` | Manage Administrator accounts. | Client-rendered, auth-gated. |
-| `/admin/reset-password` | Set a new password from an emailed reset link. | Hydrated island; public route, but requires a valid token in the URL. |
+| `/admin` | Admin app: login, dashboard, animals, content, gallery, settings, users — all logical views inside one hydrated island (`AdminShell`), not distinct server-routable URLs. | Static shell + one hydrated island, same pattern as `/` (§3.4). `[AMENDED]` 2026-07-22 — see below. |
+| `/admin/reset-password` | Set a new password from an emailed reset link. | Hydrated island; public route, but requires a valid token in the URL. This is the one `/admin/*` URL that **is** a real, separately-loadable page — it's reached from an email client, not in-app navigation, so it can't rely on `AdminShell`'s client-side view state already being loaded. |
+
+`[AMENDED]` 2026-07-22 (M6) — the original route map listed `/admin/login`, `/admin`, `/admin/animals`, `/admin/content`, `/admin/settings`, `/admin/users` as six distinct rows/URLs. Implemented instead as one page (`/admin`) whose `AdminShell` island manages all of those as internal view state (`dashboard | animals | content | gallery | settings | users`), exactly mirroring how `/`'s five sections were never separate URLs either (§3.4). No router library exists or is needed in this project's deliberately minimal dependency stack; nothing in Requirements.md mandates admin deep-linking/bookmarking. `/admin/reset-password` is the sole exception, for the reason given above.
 
 ### 3.2 Component Breakdown
 Public site components (visual/behavioral spec sourced from the Claude Design prototype): `[DESIGN]`
@@ -100,6 +97,7 @@ Public site components (visual/behavioral spec sourced from the Claude Design pr
 
 Administrator components (new; not present in the public-only design prototype): `[ADDED]`
 - AdminLogin, AdminShell (nav + auth guard), AnimalEditor (create/edit form + media manager), ContentEditor (in-place text fields), SiteSettingsPanel, AdminUserManager, AuditLogView.
+- **GalleryEditor, AdminResetPassword, AdminForcePasswordChange.** `[ADDED]` 2026-07-22 (M6) — GalleryEditor manages `gallery_photos` (add/edit/delete/reorder), an approved scope addition since that table existed with a public `GET /api/gallery` but no admin management anywhere in the original design. AdminResetPassword and AdminForcePasswordChange were both implied by already-built M5 backend behavior (the reset-password flow and `force_password_change`) but never listed as components to build.
 
 ### 3.3 Shared Design Tokens
 A single tokens module (colors as OKLCH values, the Quicksand/Nunito font stack, spacing and radius conventions) is extracted directly from the Claude Design source and imported by every component, public or admin. This is the one place a future Design Iteration Workflow update (requirements §6.4) needs to touch to restyle the whole site consistently. `[DESIGN]`
@@ -110,7 +108,7 @@ Public pages and the admin app call the Workers API for animals, gallery photos,
 `[AMENDED]` 2026-07-21 — §3's "static HTML by default... only the interactive pieces hydrated as islands" and this section's "nothing is hardcoded at build time" are in real tension for a pure Astro static build: build-time data fetching (top-level `await` in `.astro` frontmatter) would satisfy "static HTML" but bake in whatever content existed at the last deploy, breaking "edits appear without redeploy." Resolved during M4 implementation in favor of the no-redeploy requirement, since that's the more specific and more frequently-stated one (Requirements §3.4, §7.2.1): the entire visible `/` page is one hydrated Preact island (`PublicSite`, mounted `client:load`) that fetches `/api/animals`, `/api/gallery`, `/api/content`, `/api/settings` in parallel on mount and renders everything from that response — directly porting the design prototype's own single-component structure (one `Component` class managing all state via `renderVals()`). Astro's build-time-static part is reduced to the document shell: `<head>` meta tags, Open Graph, font preconnect links, and a loading-skeleton fallback shown until the fetch resolves. This trades away some of the "minimal shipped JS"/pre-rendered-content SEO benefit static generation would otherwise give — acceptable here since Requirements §8.4's SEO needs (page title/description/Open Graph/sitemap/robots.txt) are about the page's own metadata, not about individual animal listings being crawler-indexed, and can stay static regardless of this decision.
 
 ## 4. Backend / API Design
-The Workers API is organized into route modules — auth, animals, gallery, content, settings, admins, contact, uploads — behind a small router, with shared middleware for session authentication, rate limiting, and audit logging on any state-changing admin request. `[AMENDED]` 2026-07-21 — "gallery" was missing from this list (see §5.2a's change log entry, same root cause: the gallery feature was underspecified in the original SDD).
+The Workers API is organized into route modules — auth, animals, gallery, content, settings, media, admin animals, admin gallery, admin content, admin settings, admin users, admin audit, contact — behind a small router, with shared middleware for session authentication and audit logging on any state-changing admin request (there is no generic rate-limit middleware — see §6.3a). `[AMENDED]` 2026-07-21 — "gallery" was missing from this list (see §5.2a's change log entry, same root cause: the gallery feature was underspecified in the original SDD). `[AMENDED]` 2026-07-22 (M6) — replaced the placeholder "admins, uploads" with the actual M6 module split (one file per admin resource, plus the public `media` module that serves R2 objects); "contact" remains M7 scope.
 
 The router is built on [Hono](https://hono.dev/) — the de facto standard for this on Cloudflare Workers, with first-class TypeScript support and lightweight middleware composition, matching this section's "small router, with shared middleware" design intent. `[ADDED]` 2026-07-21, chosen during M3 implementation; no framework was specified in the original SDD.
 
@@ -124,6 +122,7 @@ The router is built on [Hono](https://hono.dev/) — the de facto standard for t
 | `GET /api/content` | None | Current editable site text, keyed by field. |
 | `GET /api/settings` | None | Public settings: `showPublicPrices`, `galleryStyle`. |
 | `POST /api/contact` | None + Turnstile token required | Inquiry submission (name, email, message, optional animalId); verifies Turnstile server-side, then sends email via Resend. |
+| `GET /media/*` | None | `[ADDED]` 2026-07-22 (M6) — serves R2 objects (uploaded animal media, gallery photos, content images) through this same Worker. No public R2 domain is configured anywhere in this project's Cloudflare setup (§10.2), so uploads are served this way instead — keeps local `wrangler dev`/CI self-contained and matches §2.1's "one Worker project" decision. Mounted at `/media`, not `/api/media`, matching the shape of the pre-existing static `/uploads/...` placeholder paths so `<img src>` code never has to branch between the two. |
 
 ### 4.2 Authentication Endpoints
 
@@ -134,6 +133,7 @@ The router is built on [Hono](https://hono.dev/) — the de facto standard for t
 | `POST /api/auth/forgot-password` | None | Generic response regardless of whether the account exists (avoids user enumeration); emails a reset link if it does. |
 | `POST /api/auth/reset-password` | Valid reset token | Sets a new password, invalidates the token and all existing sessions for that account. |
 | `POST /api/auth/change-password` | Session | Used for voluntary changes and the forced first-login change for new admins. |
+| `GET /api/auth/me` | Session | `[ADDED]` 2026-07-22 (M6) — returns the current admin (`{id, username, role}`) or 401. No session-check endpoint existed anywhere in the original design; `AdminShell`'s route guard needs one to distinguish "not logged in" from "still loading" on mount. |
 
 ### 4.3 Administrator Endpoints
 
@@ -143,15 +143,21 @@ The router is built on [Hono](https://hono.dev/) — the de facto standard for t
 | `PUT /api/admin/animals/:id` | Session | Update an animal record. |
 | `DELETE /api/admin/animals/:id` | Session | **Soft delete** — sets `deleted_at`, does not remove the row or its media (client confirms first). `[AMENDED]` |
 | `PUT /api/admin/animals/reorder` | Session | Persist new display order for the herd grid. |
-| `POST /api/admin/animals/:id/media` | Session | Upload a photo/video to R2; client pre-resizes images first. |
+| `POST /api/admin/animals/:id/media` | Session | Upload a photo/video to R2. `[AMENDED]` 2026-07-22 — client-side pre-resize before upload is §7.1/M7 scope (see Development-Plan.md), not M6; M6 does a basic size-limited upload only (10MB image / 100MB video). |
 | `DELETE /api/admin/animals/:id/media/:mediaId` | Session | Remove one photo/video. |
-| `PUT /api/admin/content/:key` | Session | Edit one site text field in place (no style/placement change). |
-| `PUT /api/admin/settings` | Session | Update `showPublicPrices` / `galleryStyle`. |
+| `POST /api/admin/gallery` | Session | `[ADDED]` 2026-07-22 (M6) — create a gallery photo (multipart upload + label/description). |
+| `PUT /api/admin/gallery/:id` | Session | `[ADDED]` 2026-07-22 — metadata only (label/description/order); no file-replace endpoint, mirroring `animal_media`'s add/delete-only asymmetry — replacing a photo's image is delete-then-recreate. |
+| `DELETE /api/admin/gallery/:id` | Session | `[ADDED]` 2026-07-22. |
+| `PUT /api/admin/gallery/reorder` | Session | `[ADDED]` 2026-07-22 — same shape as `PUT /api/admin/animals/reorder`. |
+| `PUT /api/admin/content/:key` | Session | Edit one site text field in place (no style/placement change), or replace an image-backed key (`site.logo_url`, `hero.photo_url`, `about.photo_url` — see §5.4) via multipart upload. 404s for a key that isn't already seeded, rather than silently creating an orphan row. |
+| `PUT /api/admin/settings` | Session | Update `showPublicPrices` / `galleryStyle`. Partial — only provided keys are written. |
 | `GET /api/admin/users` | Session | List Administrator accounts. |
-| `POST /api/admin/users` | Session | Create an Administrator; auto-generates a temp password, emails it, sets `force_password_change`. |
-| `PUT /api/admin/users/:id` | Session | Edit role; Root can directly set another admin's password as a last resort. |
-| `DELETE /api/admin/users/:id` | Session | Delete an Administrator (blocked for the Root account). |
-| `GET /api/admin/audit` | Session | Recent audit-log entries. |
+| `POST /api/admin/users` | Session | Create an Administrator; auto-generates a temp password, emails it, sets `force_password_change`. `[AMENDED]` 2026-07-22 — creating (or promoting) an account into the `root` role requires the actor to already be Root (403 otherwise); see §7.2.3's amendment in Requirements.md. |
+| `PUT /api/admin/users/:id` | Session | Edit email/role; Root can directly set another admin's password as a last resort (403 for a non-root actor). `[AMENDED]` 2026-07-22 — same Root-only role-grant restriction as create. |
+| `DELETE /api/admin/users/:id` | Session | Delete an Administrator. 403 if the **target** account's role is `root` (Requirements §7.2.3 — Root cannot be deleted). |
+| `GET /api/admin/audit` | Session | Recent audit-log entries, `?limit=&offset=`, newest first. |
+
+`[ADDED]` 2026-07-22 — the two Root-only 403s above are this codebase's first use of HTTP 403 (previously only 401/423/400/404 were used). There's no generic `requireRole` middleware: every Root-related check depends on request-body content or the *target* row rather than being a blanket "whole route is Root-only" rule, so both are small inline checks inside `workers/routes/adminUsers.ts`'s handlers, matching this API's existing inline-validation style.
 
 ## 5. Data Design
 
@@ -213,9 +219,9 @@ The router is built on [Hono](https://hono.dev/) — the de facto standard for t
 ### 5.4 sessions, password_reset_tokens, site_content, site_settings, audit_log
 - **sessions** — `token` (hashed, PK), `admin_id` (FK), `created_at`, `expires_at`. Backs session-cookie lookups and lets logout/revocation take effect immediately.
 - **password_reset_tokens** — `token` (hashed, PK), `admin_id` (FK), `expires_at`, `used_at` (nullable). Single-use, time-limited.
-- **site_content** — `key` (TEXT, PK), `value_text`, `updated_at`, `updated_by` (FK admins). One row per editable text field on the public site.
+- **site_content** — `key` (TEXT, PK), `value_text`, `updated_at`, `updated_by` (FK admins). One row per editable text field on the public site. `[ADDED]` 2026-07-22 (M6) — three keys are image-backed rather than text (`site.logo_url`, `hero.photo_url`, `about.photo_url`), holding an R2-served or placeholder URL string. These existed as hardcoded `<img src>` paths in `Hero.tsx`/`Header.tsx`/`Footer.tsx`/`About.tsx` (M4) with no backing data at all — `site.logo_url` is shared by both `Header.tsx` and `Footer.tsx` — Requirements §7.2.1's "replace any image (hero, About, logo)" had nothing to attach to until these were added. `PUT /api/admin/content/:key` (§4.3) branches on request content-type to handle these as file uploads.
 - **site_settings** — `key` (TEXT, PK), `value`. Backs `showPublicPrices` and `galleryStyle`. `[DESIGN]`
-- **audit_log** — `id` (PK), `admin_id` (FK, actor), `action`, `target_type`, `target_id`, `summary`, `created_at`. Backs requirements §7.2.4's audit-log requirement. `[ADDED]`
+- **audit_log** — `id` (PK), `admin_id` (FK, actor), `action`, `target_type`, `target_id`, `summary`, `created_at`. Backs requirements §7.2.4's audit-log requirement. `[ADDED]` **`[AMENDED]` 2026-07-22 (M6, `migrations/0003_audit_log_admin_id_nullable.sql`) — `admin_id` is now nullable with `ON DELETE SET NULL` (was `NOT NULL` with no `ON DELETE` clause, i.e. implicit `RESTRICT`). Real audit logging makes almost every admin have at least one logged action, so `DELETE /api/admin/users/:id` on any such admin would otherwise fail with a foreign-key violation — the exact feature M6 builds. Preserving audit history after the actor's account is deleted is also the correct behavior for an accountability log, not just a workaround; `GET /api/admin/audit` returns a null actor for such rows (`LEFT JOIN admins`), which `AuditLogView` renders as "deleted administrator."**
 
 ## 6. Security Design
 
@@ -376,3 +382,4 @@ Entries added here whenever implementation causes a design decision to change fr
 - **2026-07-21** — §4.1: `GET /api/animals` list rows now include `primary_image_url`, a thumbnail derived from the first ordered `animal_media` row, added when M4's card grid needed one without an N+1 fetch per animal.
 - **2026-07-21** — §5.3, §6.3: added `admins.email` (unique, `migrations/0002_add_admin_email.sql`) — the original design never gave the `admins` table an email column despite §6.3's reset-link and §4.3's new-admin-invite emails needing somewhere to send to. Discovered during M5 implementation. §6.3 step 1 also amended from "an identifier" to concretely "email address."
 - **2026-07-21** — §6.2: added a note that login runs a real PBKDF2 derivation against a fixed dummy hash for unknown usernames, closing a timing side-channel that would otherwise leak account existence. §6.3a (new): documented the concrete rate-limiting design for login/forgot-password (reusing the lockout counter and `password_reset_tokens` cooldown instead of a separate KV/Durable-Object-backed limiter), and pinned the concrete duration constants (`workers/lib/authConstants.ts`): 15-minute lockout, 24-hour session, 1-hour reset token, 5-minute forgot-password cooldown. All decided during M5 implementation; resolves requirements §8.1's rate-limiting requirement without new infrastructure.
+- **2026-07-22** (M6) — §3.1: `/admin/login`, `/admin`, `/admin/animals`, `/admin/content`, `/admin/settings`, `/admin/users` collapsed from six route-map rows into one (`/admin`, one hydrated `AdminShell` island managing all of those as internal view state) — matches the same single-island pattern already used for `/` (§3.4); `/admin/reset-password` stays a real page since it's reached via an emailed link. §3.2: added GalleryEditor, AdminResetPassword, AdminForcePasswordChange components. §4.1: added `GET /media/*` (public, serves R2 objects — no public R2 domain is configured in this project's Cloudflare setup). §4.2: added `GET /api/auth/me`. §4.3: added gallery CRUD/reorder endpoints (approved scope addition — `gallery_photos` existed with a public read endpoint but no admin management anywhere in the original design); noted the first use of HTTP 403 for two Root-only guards; corrected the animal-media-upload note (client-side pre-resize is M7, not M6). §5.4: `audit_log.admin_id` made nullable with `ON DELETE SET NULL` (`migrations/0003_audit_log_admin_id_nullable.sql`) — the original `NOT NULL` + no-`ON DELETE` FK would block deleting any admin with a logged action once real audit logging went live, which M6 makes near-universal. §5.4: added three image-backed `site_content` keys (`site.logo_url`, `hero.photo_url`, `about.photo_url`) — the hero/About photos and farm logo were hardcoded `<img src>` paths with no backing data at all since M4, so Requirements §7.2.1's "replace any image" had nothing to attach to until now. Requirements.md §7.2.3/§15 also amended — see that document's change log.

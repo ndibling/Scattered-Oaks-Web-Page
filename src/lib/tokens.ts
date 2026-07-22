@@ -61,6 +61,13 @@ export const colors = {
   modalMedia: 'oklch(0.2 0.02 50)', // photo/video letterbox background in the detail lightbox
   footer: 'oklch(0.27 0.03 50)', // footer background (same value as text.primary — dark oak-brown)
   border: 'oklch(0.85 0.02 80)', // form input borders
+
+  // [ADDED] 2026-07-22 (M6) — no destructive-action color existed before the
+  // admin CMS's delete confirmations (animals, gallery photos, admin users).
+  danger: {
+    DEFAULT: 'oklch(0.5 0.18 25)', // delete buttons, destructive confirmation text
+    bg: 'oklch(0.94 0.03 25)', // danger-tinted panel/badge background
+  },
 } as const;
 
 export const radius = {

@@ -9,7 +9,12 @@ export default function Footer({ content }: Props) {
     <footer class="footer">
       <div class="footer-inner">
         <div class="footer-brand">
-          <img src="/uploads/Scattered Oaks Logo-eb6f247a.png" alt="" class="footer-logo" />
+          {/* [AMENDED] 2026-07-22 (M6) — reads site_content['site.logo_url'], same key as Header.tsx. */}
+          <img
+            src={content['site.logo_url'] ?? '/uploads/Scattered Oaks Logo-eb6f247a.png'}
+            alt=""
+            class="footer-logo"
+          />
           <div>
             <div class="footer-name">{content['site.farm_name']}</div>
             <div class="footer-dba">{content['site.dba_line']}</div>

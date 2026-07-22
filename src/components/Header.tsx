@@ -14,7 +14,12 @@ export default function Header({ content }: Props) {
     <header class="header">
       <div class="header-inner">
         <a href="#home" class="brand" aria-label={farmName}>
-          <img src="/uploads/Scattered Oaks Logo-eb6f247a.png" alt="" class="brand-logo" />
+          {/* [AMENDED] 2026-07-22 (M6) — reads site_content['site.logo_url'], admin-replaceable via ContentEditor. */}
+          <img
+            src={content['site.logo_url'] ?? '/uploads/Scattered Oaks Logo-eb6f247a.png'}
+            alt=""
+            class="brand-logo"
+          />
           {rest} <span class="brand-accent">{lastWord}</span>
         </a>
         <nav class="nav" aria-label="Primary">

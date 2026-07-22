@@ -62,6 +62,15 @@ INSERT OR REPLACE INTO site_settings (key, value) VALUES
 INSERT OR REPLACE INTO site_content (key, value_text) VALUES
   ('site.farm_name', 'Scattered Oaks Farms'),
   ('site.dba_line', 'A DBA of Heather Johnston — hello@scatteredoaksfarms.com'),
+  -- [ADDED] 2026-07-22 (M6) — Hero/About photos and the farm logo were
+  -- hardcoded <img src> paths in Hero.tsx/Header.tsx/About.tsx with no
+  -- backing data, despite Requirements §7.2.1 requiring they be
+  -- admin-replaceable. Seeded here at their current hardcoded paths so
+  -- swapping those components to read from content is a no-op until an
+  -- admin actually replaces one via ContentEditor. See SDD.md §5 change log.
+  ('site.logo_url', '/uploads/Scattered Oaks Logo-eb6f247a.png'),
+  ('hero.photo_url', '/uploads/Scattered Oaks Farm 3.jpg'),
+  ('about.photo_url', '/uploads/Scattered Oaks Farm.jpg'),
   ('nav.home', 'Home'),
   ('nav.about', 'About'),
   ('nav.animals', 'Available Animals'),

@@ -4,6 +4,9 @@ type Props = {
   content: SiteContent;
 };
 
+// [AMENDED] 2026-07-22 (M6) — photo now reads from site_content['hero.photo_url']
+// (admin-replaceable via ContentEditor) instead of a hardcoded path.
+
 export default function Hero({ content }: Props) {
   return (
     <section id="home" class="hero">
@@ -24,7 +27,7 @@ export default function Hero({ content }: Props) {
         <div class="hero-photo-wrap">
           <div class="hero-photo">
             <img
-              src="/uploads/Scattered Oaks Farm 3.jpg"
+              src={content['hero.photo_url'] ?? '/uploads/Scattered Oaks Farm 3.jpg'}
               alt="Zebu herd running across the pasture"
             />
           </div>

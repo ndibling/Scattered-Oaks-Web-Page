@@ -87,3 +87,36 @@ export function validatePasswordPolicy(password: string): string | null {
     return 'Password must include at least one special character.';
   return null;
 }
+
+const TEMP_PASSWORD_LETTERS = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz';
+const TEMP_PASSWORD_DIGITS = '23456789';
+const TEMP_PASSWORD_SPECIALS = '!@#$%^&*';
+
+function randomChar(charset: string): string {
+  return charset[crypto.getRandomValues(new Uint32Array(1))[0] % charset.length];
+}
+
+/**
+ * One-time password for new admin accounts (Requirements §7.2.4): always
+ * satisfies validatePasswordPolicy by construction, so callers never need to
+ * retry. Paired with force_password_change=1 — the account's owner sets a
+ * real password on first login.
+ */
+export function generateTempPassword(): string {
+  const required = [
+    randomChar(TEMP_PASSWORD_DIGITS),
+    randomChar('abcdefghijkmnpqrstuvwxyz'),
+    randomChar('ABCDEFGHJKLMNPQRSTUVWXYZ'),
+    randomChar(TEMP_PASSWORD_SPECIALS),
+  ];
+  const rest = Array.from({ length: 8 }, () =>
+    randomChar(TEMP_PASSWORD_LETTERS + TEMP_PASSWORD_DIGITS),
+  );
+  const chars = [...required, ...rest];
+  // Fisher-Yates shuffle so the fixed-category chars aren't always in the same positions.
+  for (let i = chars.length - 1; i > 0; i--) {
+    const j = crypto.getRandomValues(new Uint32Array(1))[0] % (i + 1);
+    [chars[i], chars[j]] = [chars[j], chars[i]];
+  }
+  return chars.join('');
+}

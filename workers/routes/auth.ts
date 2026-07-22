@@ -51,6 +51,19 @@ function sessionCookieOptions(maxAgeSeconds: number) {
 
 export const auth = new Hono<HonoEnv>();
 
+// GET /api/auth/me — [ADDED] 2026-07-22 (M6, SDD §4.2). No session-check
+// endpoint existed anywhere in the SDD; AdminShell's route guard needs one
+// to distinguish "not logged in" from "still loading" on mount, and to know
+// whether a forced password change is still pending on a page reload (the
+// login response carries this too, but only for the moment of login itself).
+auth.get('/me', requireSession, async (c) => {
+  const admin = c.get('admin');
+  const row = await c.env.DB.prepare('SELECT force_password_change FROM admins WHERE id = ?')
+    .bind(admin.id)
+    .first<{ force_password_change: number }>();
+  return c.json({ ...admin, forcePasswordChange: Boolean(row?.force_password_change) });
+});
+
 // POST /api/auth/login
 auth.post('/login', async (c) => {
   const body = await c.req.json<{ username?: string; password?: string }>();

@@ -12,9 +12,13 @@ export type AuthedAdmin = {
 };
 
 // Hono context variables set by middleware.ts's requireSession (M5) for
-// downstream route handlers to read via c.get('admin').
+// downstream route handlers to read via c.get('admin'). auditTargetId/
+// auditSummary are set by mutating handlers (M6) right before returning a
+// 2xx response, for middleware.ts's auditLog to pick up after next().
 export type Variables = {
   admin: AuthedAdmin;
+  auditTargetId?: string;
+  auditSummary?: string;
 };
 
 export type HonoEnv = { Bindings: Env; Variables: Variables };

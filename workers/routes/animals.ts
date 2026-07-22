@@ -1,7 +1,6 @@
 import { Hono } from 'hono';
 import type { Env } from '../types';
-
-const VALID_STATUSES = ['for-sale', 'pending', 'coming-soon', 'not-for-sale'] as const;
+import { VALID_STATUSES } from '../lib/animalConstants';
 
 type AnimalRow = {
   id: string;
