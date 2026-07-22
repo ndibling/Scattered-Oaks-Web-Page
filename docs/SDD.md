@@ -1,6 +1,6 @@
 # Scattered Oaks Farms — Software Design Description (SDD)
 
-**Version 1.5 (living document)** — originally authored as Version 1.0, July 19, 2026, as a Word document (`Scattered Oaks Farm Software Design Description.docx`, preserved in this folder as the frozen v1 baseline). This Markdown version is the living source of truth going forward: it is updated whenever implementation changes the actual design, per the workflow in `Development-Plan.md`.
+**Version 1.7 (living document)** — originally authored as Version 1.0, July 19, 2026, as a Word document (`Scattered Oaks Farm Software Design Description.docx`, preserved in this folder as the frozen v1 baseline). This Markdown version is the living source of truth going forward: it is updated whenever implementation changes the actual design, per the workflow in `Development-Plan.md`.
 
 This document describes the technical design of the Scattered Oaks Farms website, implementing the requirements defined in `Requirements.md` (formerly "Scattered Oaks Farms Website Requirements Specification" v2.1). It carries forward that document's provenance tags `[PDF]` / `[DESIGN]` / `[ADDED]` where a design decision traces directly to a specific requirement, and uses `[MANUAL SETUP]` for any one-time configuration step a human must perform by hand in GitHub, Cloudflare, or Resend — none of this can be scripted by CI on a brand-new account. Every `[MANUAL SETUP]` item also appears, in executable checklist form, in Section 10. `[AMENDED]` marks a design change made after implementation began (see change log at the bottom).
 
@@ -85,7 +85,7 @@ Astro is used as the site generator: pages are static HTML by default (fast, SEO
 
 | Route | Purpose | Rendering |
 |---|---|---|
-| `/` | Public single-page site: Hero, About, Available Animals, Gallery, Contact (anchor-navigated, matching the approved design). | Static (build-time) + hydrated islands for interactivity. |
+| `/` | Public single-page site: Hero, About, Available Animals, Gallery, Contact (anchor-navigated, matching the approved design). | Static shell (meta tags, fonts) + one hydrated island rendering the entire visible page. `[AMENDED]` 2026-07-21 — see §3.4. |
 | `/admin/login` | Administrator login form. | Hydrated island. |
 | `/admin` | Admin dashboard landing. | Client-rendered, auth-gated. |
 | `/admin/animals` | Animal list, add/edit/delete, reorder. | Client-rendered, auth-gated. |
@@ -107,6 +107,8 @@ A single tokens module (colors as OKLCH values, the Quicksand/Nunito font stack,
 ### 3.4 Data Fetching
 Public pages and the admin app call the Workers API for animals, gallery photos, site text, and settings — nothing is hardcoded at build time. This means an Administrator's edit appears on the live site immediately, with no rebuild/redeploy required. `[ADDED]`
 
+`[AMENDED]` 2026-07-21 — §3's "static HTML by default... only the interactive pieces hydrated as islands" and this section's "nothing is hardcoded at build time" are in real tension for a pure Astro static build: build-time data fetching (top-level `await` in `.astro` frontmatter) would satisfy "static HTML" but bake in whatever content existed at the last deploy, breaking "edits appear without redeploy." Resolved during M4 implementation in favor of the no-redeploy requirement, since that's the more specific and more frequently-stated one (Requirements §3.4, §7.2.1): the entire visible `/` page is one hydrated Preact island (`PublicSite`, mounted `client:load`) that fetches `/api/animals`, `/api/gallery`, `/api/content`, `/api/settings` in parallel on mount and renders everything from that response — directly porting the design prototype's own single-component structure (one `Component` class managing all state via `renderVals()`). Astro's build-time-static part is reduced to the document shell: `<head>` meta tags, Open Graph, font preconnect links, and a loading-skeleton fallback shown until the fetch resolves. This trades away some of the "minimal shipped JS"/pre-rendered-content SEO benefit static generation would otherwise give — acceptable here since Requirements §8.4's SEO needs (page title/description/Open Graph/sitemap/robots.txt) are about the page's own metadata, not about individual animal listings being crawler-indexed, and can stay static regardless of this decision.
+
 ## 4. Backend / API Design
 The Workers API is organized into route modules — auth, animals, gallery, content, settings, admins, contact, uploads — behind a small router, with shared middleware for session authentication, rate limiting, and audit logging on any state-changing admin request. `[AMENDED]` 2026-07-21 — "gallery" was missing from this list (see §5.2a's change log entry, same root cause: the gallery feature was underspecified in the original SDD).
 
@@ -116,7 +118,7 @@ The router is built on [Hono](https://hono.dev/) — the de facto standard for t
 
 | Method & Path | Auth | Notes |
 |---|---|---|
-| `GET /api/animals` | None | List animals; optional `?status=` filter matching the design's filter tabs. Excludes soft-deleted animals (`deleted_at IS NULL`). `[AMENDED]` |
+| `GET /api/animals` | None | List animals; optional `?status=` filter matching the design's filter tabs. Excludes soft-deleted animals (`deleted_at IS NULL`). Each row includes `primary_image_url` (first ordered `animal_media` row) so the card grid has a thumbnail without an N+1 fetch per card — added during M4 when the frontend needed it; the full ordered `media` array stays on the detail endpoint only. `[AMENDED]` |
 | `GET /api/animals/:id` | None | Full animal detail incl. ordered media, for the detail lightbox. Excludes soft-deleted animals. `[AMENDED]` |
 | `GET /api/gallery` | None | Gallery photo list with captions. |
 | `GET /api/content` | None | Current editable site text, keyed by field. |
@@ -360,3 +362,5 @@ Entries added here whenever implementation causes a design decision to change fr
 - **2026-07-21** — §10 item 15: Confirmed `wrangler secret put --env` requires a local `wrangler.toml` defining the Worker name and named environments — tried it ahead of M1 and got "Required Worker name missing" / "No environment found in configuration." Sequencing note only; no design change, just makes explicit that this step must follow M1, not just "the Worker existing remotely."
 - **2026-07-21** — §5.2a (new): added `gallery_photos` (id, url, label, description, display_order, timestamps). Discovered during M2 implementation that the original data design never actually defined a table backing `GET /api/gallery` or the design prototype's 9-item captioned gallery grid — an oversight in the original SDD, not a scope change.
 - **2026-07-21** — §4: adopted [Hono](https://hono.dev/) as the router library (no framework was specified originally); added "gallery" to the route-module list, the same oversight as the missing `gallery_photos` table above. Decided during M3 implementation.
+- **2026-07-21** — §3.1, §3.4: resolved the tension between "static HTML by default" and "nothing hardcoded at build time" in favor of one hydrated Preact island rendering the whole `/` page, fetching live data client-side on mount. Decided during M4 implementation; see §3.4 for the full reasoning.
+- **2026-07-21** — §4.1: `GET /api/animals` list rows now include `primary_image_url`, a thumbnail derived from the first ordered `animal_media` row, added when M4's card grid needed one without an N+1 fetch per animal.

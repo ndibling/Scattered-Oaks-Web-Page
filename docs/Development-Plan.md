@@ -60,6 +60,7 @@ Pixel-faithful rebuild of the Claude Design prototype (requirements §6.4 step 4
 - SEO basics: meta tags, Open Graph, `sitemap.xml`, `robots.txt` (§8.4).
 - **E2E tests (Playwright), visitor flow subset:** browse, apply each filter tab, open detail lightbox + carousel.
 - **Exit criteria:** local dev site is visually/behaviorally indistinguishable from the Claude Design prototype, backed by live local data.
+- **Gotcha for M6 (and any future component work):** Preact's inline `<style>{...}</style>` tags are **not** scoped the way Astro's own `.astro` `<style>` blocks are — they render as literal global `<style>` elements, so identically-named classes across sibling components (`.eyebrow`, `.heading`, `.badge`, `.overlay`, `.modal`, `.name`, `.close-btn`, etc.) silently collide, with the last-rendered component's rule winning site-wide. Hit this in M4 (AnimalGrid's heading rendered white/washed-out because ContactForm's `.heading` rule, targeting its own dark teal section, loaded later and won the cascade) — fixed by prefixing every class per-component (`hero-*`, `about-*`, `card-*`, `modal-*`, `gallery-*`, `lightbox-*`, `contact-*`). Give every new admin component (M6) its own class prefix from the start rather than discovering this the same way.
 
 ### M5. Backend — Auth & Session Security
 Implements SDD §6.1–§6.3 exactly.
@@ -97,7 +98,7 @@ Close every remaining gap before this is CI/CD-eligible.
 - Accessibility pass against WCAG 2.1 AA (automated axe-core scan + manual keyboard-nav check on modals/filters).
 - Performance pass: confirm image lazy-loading below the fold, check first-contentful-paint locally against the §8.2 2-second target.
 - Coverage check: confirm the suite clears the 80% threshold that CI will enforce (SDD §8).
-- **Exit criteria:** `npm test` (unit+integration) and `npx playwright test` (e2e) both green locally, coverage ≥ 80%, no critical axe-core violations. `[AMENDED]` 2026-07-21 — `astro dev` auto-daemonizes into background mode in this dev environment, which breaks Playwright's `webServer` auto-launch (the spawned process exits immediately instead of blocking). `playwright.config.ts` has no `webServer` block as a result; start the dev server yourself first (`astro dev --background`, per `CLAUDE.md`) before running `npm run test:e2e`. CI (M9) needs the equivalent: start the server as an explicit background step before the Playwright job, not rely on Playwright to launch it.
+- **Exit criteria:** `npm test` (unit+integration) and `npx playwright test` (e2e) both green locally, coverage ≥ 80%, no critical axe-core violations. `[AMENDED]` 2026-07-21 — `astro dev` auto-daemonizes into background mode in this dev environment, which breaks Playwright's `webServer` auto-launch (the spawned process exits immediately instead of blocking). `playwright.config.ts` has no `webServer` block as a result; start the dev server yourself first before running `npm run test:e2e`. Since M4, that means the full stack, not just the Astro shell: `npm run build && npx wrangler dev` (port 8787) — the visitor flow needs the real `/api/*` Worker, `astro dev` alone (port 4321) has no API. CI (M9) needs the equivalent: start `wrangler dev` (or the preview deployment) as an explicit step before the Playwright job, not rely on Playwright to launch it.
 
 ---
 

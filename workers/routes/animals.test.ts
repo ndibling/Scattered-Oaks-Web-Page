@@ -6,9 +6,10 @@ describe('GET /api/animals', () => {
   it('returns all 11 seeded, non-deleted animals ordered by display_order', async () => {
     const res = await worker.fetch(new Request('http://example.com/api/animals'), env);
     expect(res.status).toBe(200);
-    const body = (await res.json()) as { id: string }[];
+    const body = (await res.json()) as { id: string; primary_image_url: string | null }[];
     expect(body).toHaveLength(11);
     expect(body[0].id).toBe('daisy');
+    expect(body[0].primary_image_url).toBe('/uploads/Daisy.jpg');
     expect(body.at(-1)?.id).toBe('peanut');
   });
 

@@ -1,0 +1,122 @@
+/*
+ * Global design tokens as CSS custom properties — kept in sync by hand with
+ * src/lib/tokens.ts (SDD.md §3.3). Component <style> blocks reference these
+ * instead of inlining OKLCH values, so a future Design Iteration Workflow
+ * update only has to touch this file + tokens.ts.
+ */
+
+:root {
+  --color-background: oklch(0.96 0.025 85);
+  --color-surface: oklch(0.99 0.01 85);
+  --color-surface-alt: oklch(0.93 0.03 80);
+
+  --color-text-primary: oklch(0.27 0.03 50);
+  --color-text-body: oklch(0.35 0.03 55);
+  --color-text-muted: oklch(0.45 0.02 55);
+  --color-heading: oklch(0.32 0.04 195);
+
+  --color-accent: oklch(0.5 0.08 195);
+  --color-accent-hover: oklch(0.4 0.09 195);
+  --color-accent-deep: oklch(0.4 0.07 195);
+
+  --color-accent2: oklch(0.55 0.1 60);
+  --color-accent2-bright: oklch(0.6 0.1 60);
+  --color-accent2-text: oklch(0.4 0.1 55);
+  --color-accent2-border: oklch(0.68 0.11 65);
+
+  --color-status-for-sale-bg: oklch(0.5 0.08 195);
+  --color-status-for-sale-text: oklch(0.99 0.01 85);
+  --color-status-pending-bg: oklch(0.65 0.1 65);
+  --color-status-pending-text: oklch(0.99 0.01 85);
+  --color-status-coming-soon-bg: oklch(0.99 0.01 85);
+  --color-status-coming-soon-text: oklch(0.55 0.1 60);
+  --color-status-not-for-sale-bg: oklch(0.55 0.02 50);
+  --color-status-not-for-sale-text: oklch(0.99 0.01 85);
+
+  --color-overlay: oklch(0.15 0.02 50 / 0.85);
+  --color-modal-media: oklch(0.2 0.02 50);
+  --color-footer: oklch(0.27 0.03 50);
+  --color-border: oklch(0.85 0.02 80);
+
+  --font-heading: 'Quicksand', sans-serif;
+  --font-body: 'Nunito', sans-serif;
+  --font-mono: ui-monospace, monospace;
+
+  --radius-pill: 999px;
+  --radius-card: 18px;
+  --radius-card-lg: 24px;
+  --radius-card-sm: 14px;
+  --radius-modal: 20px;
+  --radius-input: 10px;
+
+  --container-max: 1180px;
+  --container-narrow: 640px;
+  --container-modal: 920px;
+  --container-gallery-modal: 820px;
+
+  --shadow-card: 0 6px 18px oklch(0.3 0.04 60 / 0.1);
+  --shadow-hero-photo: 0 20px 40px oklch(0.3 0.05 195 / 0.25);
+  --shadow-cta: 0 4px 14px oklch(0.5 0.08 195 / 0.35);
+  --shadow-badge: 0 8px 20px oklch(0.4 0.08 60 / 0.3);
+}
+
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--color-accent-hover);
+}
+
+button {
+  font-family: inherit;
+}
+
+img,
+video {
+  max-width: 100%;
+  display: block;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}

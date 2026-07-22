@@ -5,3 +5,6 @@
 # Exact, byte-faithful pulls from Claude Design — must never be reformatted,
 # see design-reference/README.md.
 design-reference/
+
+# Wrangler's local dev/build cache — not our source.
+.wrangler/
