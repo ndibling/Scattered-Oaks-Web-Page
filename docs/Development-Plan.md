@@ -72,6 +72,8 @@ Implements SDD §6.1–§6.3 exactly.
 - **Unit tests:** password hashing/verification, lockout counting, token generation/expiry (SDD §8 table).
 - **Integration tests:** full login → lockout → reset → forced-first-login-change sequences against local D1.
 - **Exit criteria:** all five auth endpoints pass their integration tests locally, including the 3-attempt lockout and reset-token single-use/expiry behavior.
+- `[AMENDED]` 2026-07-21 — `admins` had no `email` column (needed for password-reset/invite emails, Requirements §7.2.4); added via `migrations/0002_add_admin_email.sql` (see SDD.md change log).
+- `[AMENDED]` 2026-07-21 — **Dev-only fixture credential.** `seeds/sample-data.sql` seeds one Root admin row (`id` `root-dev`) for local/preview `/admin/login` testing and as the auth integration tests' known-good account: username `Root`, password `DevRoot!2026`, email `dev-root@example.com`. This is fixture data, not a secret — it's never used in production, where the real Root account is bootstrapped separately at deploy time via a one-time GitHub secret (`Manual-Setup-Guide.md` Phase H1/I1). Regenerate the hash with a fresh password via `workers/lib/password.ts`'s `hashPassword()` if this fixture ever needs to change.
 
 ### M6. Frontend + Backend — Admin CMS
 The `/admin` SPA and its remaining authenticated endpoints (SDD §3.1, §4.3).

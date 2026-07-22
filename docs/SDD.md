@@ -1,6 +1,6 @@
 # Scattered Oaks Farms — Software Design Description (SDD)
 
-**Version 1.7 (living document)** — originally authored as Version 1.0, July 19, 2026, as a Word document (`Scattered Oaks Farm Software Design Description.docx`, preserved in this folder as the frozen v1 baseline). This Markdown version is the living source of truth going forward: it is updated whenever implementation changes the actual design, per the workflow in `Development-Plan.md`.
+**Version 1.8 (living document)** — originally authored as Version 1.0, July 19, 2026, as a Word document (`Scattered Oaks Farm Software Design Description.docx`, preserved in this folder as the frozen v1 baseline). This Markdown version is the living source of truth going forward: it is updated whenever implementation changes the actual design, per the workflow in `Development-Plan.md`.
 
 This document describes the technical design of the Scattered Oaks Farms website, implementing the requirements defined in `Requirements.md` (formerly "Scattered Oaks Farms Website Requirements Specification" v2.1). It carries forward that document's provenance tags `[PDF]` / `[DESIGN]` / `[ADDED]` where a design decision traces directly to a specific requirement, and uses `[MANUAL SETUP]` for any one-time configuration step a human must perform by hand in GitHub, Cloudflare, or Resend — none of this can be scripted by CI on a brand-new account. Every `[MANUAL SETUP]` item also appears, in executable checklist form, in Section 10. `[AMENDED]` marks a design change made after implementation began (see change log at the bottom).
 
@@ -203,6 +203,7 @@ The router is built on [Hono](https://hono.dev/) — the de facto standard for t
 |---|---|---|
 | id | TEXT (UUID) | Primary key. |
 | username | TEXT, unique | e.g. "Root". |
+| **email** | **TEXT, unique** | **`[AMENDED]` 2026-07-21 — missing from the original design despite password-reset and new-admin-invite emails (§6.3, §4.3's `POST /api/admin/users`) needing somewhere to send to. Added via `migrations/0002_add_admin_email.sql`.** |
 | password_hash, password_salt | TEXT | PBKDF2-SHA256 hash and per-user salt — see §6. |
 | role | TEXT | `root` or `admin`. |
 | force_password_change | BOOLEAN | Set on temp-password accounts; cleared after first change. |
@@ -226,17 +227,26 @@ Passwords are hashed with PBKDF2-SHA256 (100,000 iterations, per-user random sal
 2. Worker looks up the admin by username; if `locked_until` is in the future, rejects immediately with a generic lockout message.
 3. Worker derives the PBKDF2 hash of the submitted password with the stored salt and compares to `password_hash`.
 4. On mismatch: increments `failed_login_count`; on the 3rd consecutive failure, sets `locked_until` and stops.
-5. On match: resets `failed_login_count` to 0, generates a random 256-bit session token, stores it (hashed) in `sessions` with an expiry, and returns it as an httpOnly, Secure, SameSite=Strict cookie.
+5. On match: resets `failed_login_count` to 0, generates a random 256-bit session token, stores it (hashed) in `sessions` with a 24-hour expiry (`SESSION_DURATION_MS`), and returns it as an httpOnly, Secure, SameSite=Strict cookie.
 6. If `force_password_change` is set (new admin, first login), the client is redirected to the change-password screen before anything else is accessible.
 
 This sequence implements requirements §7.2.4 in full: 3-attempt lockout, forced first-login change for new admins, no password expiration. `[PDF]`
 
+`[AMENDED]` 2026-07-21 — an unknown username still runs a full PBKDF2 derivation against a fixed dummy hash/salt (`workers/lib/password.ts`'s `DUMMY_HASH_SALT`) before returning the generic error, so login's response time for a nonexistent account doesn't measurably differ from a real one — otherwise the timing difference (skip-hashing vs. hash-then-compare) would itself leak which usernames exist, undermining the account-lockout message's deliberate vagueness. Decided during M5 implementation.
+
 ### 6.3 Forgot / Reset Password Sequence
-1. User submits an identifier to `POST /api/auth/forgot-password`; the response is identical whether or not the account exists, to avoid revealing valid usernames.
-2. If the account exists, the Worker creates a single-use, time-limited `password_reset_tokens` row and emails a reset link (containing the raw token) via Resend.
+1. User submits their email address to `POST /api/auth/forgot-password`; the response is identical whether or not the account exists, to avoid revealing valid accounts. `[AMENDED]` 2026-07-21 — the original text said "an identifier"; concretely, this is the `admins.email` column (§5.3), not username, since username isn't guaranteed private the way an email address is.
+2. If the account exists, the Worker creates a single-use `password_reset_tokens` row, valid for 1 hour (`RESET_TOKEN_DURATION_MS`), and emails a reset link (containing the raw token) via Resend. `[AMENDED]` M5 implements this against a stub — real Resend wiring is M7.
 3. The link opens `/admin/reset-password?token=...`; the client submits a new password to `POST /api/auth/reset-password`.
-4. The Worker verifies the token is valid/unused/unexpired, sets the new password hash, marks the token used, and invalidates all existing sessions for that account.
+4. The Worker verifies the token is valid/unused/unexpired, validates the new password against the policy (§policy — 8+ chars, one number, one lowercase, one uppercase, one special character, per requirements §7.2.4), sets the new password hash, marks the token used, and invalidates all existing sessions for that account.
 5. As a last resort, Root can directly set another admin's password via `PUT /api/admin/users/:id` without the email flow.
+
+### 6.3a Rate Limiting Without a Separate Limiter
+`[AMENDED]` 2026-07-21 — requirements §8.1 calls for rate limiting on login and forgot-password, but no KV or Durable Object binding exists in this project (§2's architecture), and adding one just for this would be more infrastructure than the problem needs. Decided during M5 implementation to reuse data these endpoints already require instead of building a separate limiter:
+- **Login** is throttled by the existing account-lockout counter (§6.2): 3 consecutive failed attempts locks the account for 15 minutes (`LOCKOUT_DURATION_MS`) before another attempt is even checked against the password.
+- **Forgot-password** is throttled per-account by `password_reset_tokens` itself: a request within 5 minutes (`FORGOT_PASSWORD_COOLDOWN_MS`) of an existing unused, unexpired token for the same account is a silent no-op — still returns the same generic response (§6.3 step 1), but doesn't create a second token or send a second email. Since the table has no `created_at` column, "created within the cooldown window" is inferred from `expires_at` (every token's `expires_at` = its creation time + `RESET_TOKEN_DURATION_MS`).
+
+A separate IP-based limiter (e.g. a Cloudflare Rate Limiting Rule at the edge) remains a reasonable future addition but isn't required for the per-account guarantees above.
 
 ### 6.4 Contact-Form Spam Protection
 The public contact form renders a Cloudflare Turnstile widget; the client includes the resulting token in its `POST /api/contact` body. The Worker verifies that token server-side against Cloudflare's siteverify endpoint using the Turnstile secret key before processing the inquiry or sending any email — a request with a missing or failed token is rejected before it ever reaches Resend. `[ADDED]`
@@ -364,3 +374,5 @@ Entries added here whenever implementation causes a design decision to change fr
 - **2026-07-21** — §4: adopted [Hono](https://hono.dev/) as the router library (no framework was specified originally); added "gallery" to the route-module list, the same oversight as the missing `gallery_photos` table above. Decided during M3 implementation.
 - **2026-07-21** — §3.1, §3.4: resolved the tension between "static HTML by default" and "nothing hardcoded at build time" in favor of one hydrated Preact island rendering the whole `/` page, fetching live data client-side on mount. Decided during M4 implementation; see §3.4 for the full reasoning.
 - **2026-07-21** — §4.1: `GET /api/animals` list rows now include `primary_image_url`, a thumbnail derived from the first ordered `animal_media` row, added when M4's card grid needed one without an N+1 fetch per animal.
+- **2026-07-21** — §5.3, §6.3: added `admins.email` (unique, `migrations/0002_add_admin_email.sql`) — the original design never gave the `admins` table an email column despite §6.3's reset-link and §4.3's new-admin-invite emails needing somewhere to send to. Discovered during M5 implementation. §6.3 step 1 also amended from "an identifier" to concretely "email address."
+- **2026-07-21** — §6.2: added a note that login runs a real PBKDF2 derivation against a fixed dummy hash for unknown usernames, closing a timing side-channel that would otherwise leak account existence. §6.3a (new): documented the concrete rate-limiting design for login/forgot-password (reusing the lockout counter and `password_reset_tokens` cooldown instead of a separate KV/Durable-Object-backed limiter), and pinned the concrete duration constants (`workers/lib/authConstants.ts`): 15-minute lockout, 24-hour session, 1-hour reset token, 5-minute forgot-password cooldown. All decided during M5 implementation; resolves requirements §8.1's rate-limiting requirement without new infrastructure.

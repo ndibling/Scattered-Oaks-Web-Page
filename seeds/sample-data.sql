@@ -100,3 +100,14 @@ INSERT OR REPLACE INTO site_content (key, value_text) VALUES
   ('contact.label_submit', 'Send Message'),
   ('contact.thankyou_heading', 'Thanks, partner!'),
   ('contact.thankyou_body', 'Heather will get back to you soon.');
+
+-- Dev-only Root admin fixture (Development-Plan.md M5), for local/preview
+-- `/admin/login` testing and as the auth integration tests' known-good
+-- account. Never used in production — the real Root account is bootstrapped
+-- separately at deploy time via a one-time GitHub secret, per
+-- Manual-Setup-Guide.md Phase H1/I1. Password/salt below are the PBKDF2-
+-- SHA256 hash (workers/lib/password.ts) of the plaintext dev password
+-- `DevRoot!2026`, documented in Development-Plan.md's M5 notes since it's
+-- fixture data, not a real credential.
+INSERT OR REPLACE INTO admins (id, username, email, password_hash, password_salt, role) VALUES
+  ('root-dev', 'Root', 'dev-root@example.com', '57fb31b9e05fc8d88ca301da3b61ff7c0a2030932e31bc01424be7a30311ca41', '10644714fc9b8ebd4381ea66d6914456', 'root');

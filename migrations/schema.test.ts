@@ -1,16 +1,24 @@
 import { DatabaseSync } from 'node:sqlite';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { describe, it, expect, beforeEach } from 'vitest';
 
 const dir = path.dirname(fileURLToPath(import.meta.url));
-const schemaSql = readFileSync(path.join(dir, '0001_initial_schema.sql'), 'utf-8');
+
+// Applies every NNNN_*.sql migration in this directory, in filename order —
+// mirrors how `wrangler d1 migrations apply` replays them, so this test file
+// doesn't need editing every time a new migration is added (M5 added 0002).
+const migrationFiles = readdirSync(dir)
+  .filter((f) => /^\d{4}_.*\.sql$/.test(f))
+  .sort();
 const seedSql = readFileSync(path.join(dir, '..', 'seeds', 'sample-data.sql'), 'utf-8');
 
 function freshDb(): DatabaseSync {
   const db = new DatabaseSync(':memory:');
-  db.exec(schemaSql);
+  for (const file of migrationFiles) {
+    db.exec(readFileSync(path.join(dir, file), 'utf-8'));
+  }
   return db;
 }
 
@@ -26,7 +34,7 @@ function countAll(db: DatabaseSync) {
   };
 }
 
-describe('D1 schema (0001_initial_schema.sql)', () => {
+describe('D1 schema (all migrations applied)', () => {
   let db: DatabaseSync;
 
   beforeEach(() => {
@@ -93,6 +101,37 @@ describe('D1 schema (0001_initial_schema.sql)', () => {
       deleted_at: unknown;
     };
     expect(row.deleted_at).toBeNull();
+  });
+});
+
+describe('0002_add_admin_email.sql', () => {
+  let db: DatabaseSync;
+
+  beforeEach(() => {
+    db = freshDb();
+  });
+
+  it('accepts an admin row with an email value', () => {
+    db.prepare(
+      `INSERT INTO admins (id, username, password_hash, password_salt, role, email) VALUES (?, ?, ?, ?, ?, ?)`,
+    ).run('a1', 'root', 'hash', 'salt', 'root', 'root@scatteredoaksfarms.com');
+    const row = db.prepare('SELECT email FROM admins WHERE id = ?').get('a1') as {
+      email: string;
+    };
+    expect(row.email).toBe('root@scatteredoaksfarms.com');
+  });
+
+  it('rejects a second admin reusing the same email (UNIQUE constraint)', () => {
+    db.prepare(
+      `INSERT INTO admins (id, username, password_hash, password_salt, role, email) VALUES (?, ?, ?, ?, ?, ?)`,
+    ).run('a1', 'root', 'hash', 'salt', 'root', 'root@scatteredoaksfarms.com');
+    expect(() =>
+      db
+        .prepare(
+          `INSERT INTO admins (id, username, password_hash, password_salt, role, email) VALUES (?, ?, ?, ?, ?, ?)`,
+        )
+        .run('a2', 'someoneelse', 'hash', 'salt', 'admin', 'root@scatteredoaksfarms.com'),
+    ).toThrow();
   });
 });
 
