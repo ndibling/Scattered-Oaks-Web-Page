@@ -19,7 +19,7 @@ describe('extensionFor', () => {
 });
 
 describe('uploadToR2 / deleteFromR2', () => {
-  it('uploads a file and returns a /media/-prefixed URL, then deletes it', async () => {
+  it('uploads a file and returns a /media/-prefixed URL, then moves it to trash/ on delete', async () => {
     const key = `test/r2-lib-${crypto.randomUUID()}.jpg`;
     const url = await uploadToR2(
       env.MEDIA,
@@ -33,9 +33,19 @@ describe('uploadToR2 / deleteFromR2', () => {
 
     await deleteFromR2(env.MEDIA, url);
     expect(await env.MEDIA.get(key)).toBeNull();
+
+    const trashed = await env.MEDIA.get(`trash/${key}`);
+    expect(trashed).not.toBeNull();
+    expect(new Uint8Array(await trashed!.arrayBuffer())).toEqual(new Uint8Array([1, 2, 3]));
   });
 
   it('deleteFromR2 no-ops for a non-R2-backed URL (e.g. a seeded /uploads/... placeholder)', async () => {
     await expect(deleteFromR2(env.MEDIA, '/uploads/Daisy.jpg')).resolves.toBeUndefined();
+  });
+
+  it('deleteFromR2 no-ops for a /media/ URL whose object no longer exists', async () => {
+    await expect(
+      deleteFromR2(env.MEDIA, `/media/test/does-not-exist-${crypto.randomUUID()}.jpg`),
+    ).resolves.toBeUndefined();
   });
 });

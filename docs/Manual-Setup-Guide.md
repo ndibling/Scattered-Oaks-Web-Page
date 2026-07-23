@@ -17,6 +17,7 @@ Non-secret values generated while working through this guide (2026-07-21) — ev
 | D1 database `scattered-oaks-db-preview` | id `713e4729-4c61-463b-b81f-1fb66b728542` |
 | R2 bucket | `scattered-oaks-media` |
 | R2 bucket (preview) | `scattered-oaks-media-preview` |
+| R2 bucket (backups, `[ADDED]` 2026-07-23 M11) | `scattered-oaks-backups` — not bound to the Worker, only written by `.github/workflows/backup.yml` via `CLOUDFLARE_API_TOKEN`; deliberately separate from `scattered-oaks-media` since `workers/routes/media.ts` serves that bucket's contents publicly |
 | Worker project | `scattered-oaks-farms` (connected to GitHub for domain binding only — auto-deploy-on-push disabled, see E1a) |
 | Turnstile Site Key (public) | `0x4AAAAAAD6H-O_yKg6fVzMc` (also set as the GitHub Actions repo variable `PUBLIC_TURNSTILE_SITE_KEY` — see F1's "Site key delivery changed" note) |
 | Resend sending domain | `mail.scattered-oaks-zebu.com` (verified) |
