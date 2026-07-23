@@ -17,6 +17,10 @@ jobs:
   # cloud credentials needed, mirrors exactly what M4-M8 already do locally.
   build-and-test:
     runs-on: ubuntu-latest
+    # Safety net: without this, a hung step (see the playwright-install note
+    # below — hit for real on this workflow's second-ever run) burns the
+    # default 360-minute job timeout in silence instead of failing fast.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
@@ -45,15 +49,31 @@ jobs:
       # every local E2E run has used since M7.
       - run: cp .dev.vars.example .dev.vars
 
+      # [AMENDED] 2026-07-23 (M9 follow-up) — this step hung indefinitely on
+      # this workflow's second-ever run (14+ minutes with no progress,
+      # confirmed via the Actions API, on a run that otherwise finishes every
+      # other step in under a minute). Root cause: `--with-deps` runs
+      # `apt-get install` on the runner, and Ubuntu's `needrestart` service
+      # can pop an interactive "restart services?" prompt during package
+      # installs that blocks forever with no TTY to answer it in CI.
+      # `NEEDRESTART_MODE=a` forces it to restart automatically instead of
+      # prompting; `DEBIAN_FRONTEND=noninteractive` is the standard belt
+      # for any other apt prompt. `timeout-minutes` is the backstop in case
+      # something else hangs the same way in the future.
       - run: npx playwright install --with-deps chromium
+        timeout-minutes: 5
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          NEEDRESTART_MODE: a
 
       # playwright.config.ts deliberately has no webServer block (astro
       # dev/wrangler dev auto-daemonize in a way incompatible with
       # Playwright's spawn-and-wait feature — see that file's own comment).
       # Start it ourselves, wait for it to answer, then run tests, then stop it.
+      # (dist/ already exists from the `npm run build` step above — no need
+      # to rebuild it again here.)
       - name: Start wrangler dev
         run: |
-          npm run build
           nohup npx wrangler dev > wrangler-dev.log 2>&1 &
           echo $! > wrangler-dev.pid
           for i in $(seq 1 30); do
@@ -91,6 +111,7 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     environment: preview
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -130,6 +151,10 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: production
+    # Only counts actual execution time, not time spent waiting on the
+    # required-reviewer approval click — safe to set even though this job
+    # can sit "pending" for as long as the approval takes.
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
