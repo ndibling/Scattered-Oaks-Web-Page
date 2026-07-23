@@ -30,8 +30,18 @@ export async function uploadToR2(bucket: R2Bucket, key: string, file: File): Pro
   return `/media/${key}`;
 }
 
-/** No-ops for URLs that aren't R2-backed (e.g. seeded /uploads/... placeholder paths). */
+/**
+ * No-ops for URLs that aren't R2-backed (e.g. seeded /uploads/... placeholder paths).
+ * Moves the object under `trash/` instead of hard-deleting it (SDD §8.6 — R2 objects must be
+ * recoverable from accidental deletion); a bucket lifecycle rule expires `trash/` after 30 days.
+ */
 export async function deleteFromR2(bucket: R2Bucket, url: string): Promise<void> {
   if (!url.startsWith('/media/')) return;
-  await bucket.delete(url.slice('/media/'.length));
+  const key = url.slice('/media/'.length);
+  const object = await bucket.get(key);
+  if (!object) return;
+  await bucket.put(`trash/${key}`, await object.arrayBuffer(), {
+    httpMetadata: object.httpMetadata,
+  });
+  await bucket.delete(key);
 }

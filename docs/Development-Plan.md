@@ -132,10 +132,10 @@ Requires Track A (code + tests exist) and Track B (accounts/secrets exist).
 - **Exit criteria:** production D1 (once seeded) reflects the real herd, not sample data.
 
 ### M11. Launch
-- First production approval click; verify `scattered-oaks-zebu.com` resolves and serves the live site.
-- Log in as Root with the bootstrap credential, change the password immediately, rotate the `ROOT_ADMIN_BOOTSTRAP_PASSWORD` GitHub secret (requirements §7.2.4, SDD §10 item 19).
-- Confirm D1 backup/export schedule and R2 retention are in place (§8.6).
-- **Exit criteria:** site is live at the production domain; Root credential has been rotated out of its bootstrap value; a backup schedule exists.
+- First production approval click; verify `scattered-oaks-zebu.com` resolves and serves the live site. **Done** — confirmed live and healthy (M9).
+- Log in as Root with the bootstrap credential, change the password immediately, rotate the `ROOT_ADMIN_BOOTSTRAP_PASSWORD` GitHub secret (requirements §7.2.4, SDD §10 item 19). **Owner action, still open** — needs the bootstrap password from Phase H1, not something this session can/should do.
+- Confirm D1 backup/export schedule and R2 retention are in place (§8.6). **Done 2026-07-23** — see SDD.md's M11 change-log entry: weekly `wrangler d1 export` to the new `scattered-oaks-backups` R2 bucket (`.github/workflows/backup.yml`), plus a `trash/`-prefix soft-delete + 30-day lifecycle expiry on `scattered-oaks-media`/`-preview` since true R2 object versioning doesn't exist in the installed wrangler.
+- **Exit criteria:** site is live at the production domain (done); Root credential has been rotated out of its bootstrap value (pending owner login); a backup schedule exists (done).
 
 ---
 
