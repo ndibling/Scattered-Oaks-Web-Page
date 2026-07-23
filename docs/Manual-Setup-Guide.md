@@ -17,8 +17,8 @@ Non-secret values generated while working through this guide (2026-07-21) — ev
 | D1 database `scattered-oaks-db-preview` | id `713e4729-4c61-463b-b81f-1fb66b728542` |
 | R2 bucket | `scattered-oaks-media` |
 | R2 bucket (preview) | `scattered-oaks-media-preview` |
-| Worker project | `scattered-oaks-farms` (connected to GitHub via Workers Builds) |
-| Turnstile Site Key (public) | `0x4AAAAAAD6H-O_yKg6fVzMc` |
+| Worker project | `scattered-oaks-farms` (connected to GitHub for domain binding only — auto-deploy-on-push disabled, see E1a) |
+| Turnstile Site Key (public) | `0x4AAAAAAD6H-O_yKg6fVzMc` (also set as the GitHub Actions repo variable `PUBLIC_TURNSTILE_SITE_KEY` — see F1's "Site key delivery changed" note) |
 | Resend sending domain | `mail.scattered-oaks-zebu.com` (verified) |
 
 ---
@@ -113,6 +113,9 @@ Cloudflare dashboard → **Workers & Pages** → **Create** → **Connect to Git
 - **Deploy command:** `npx wrangler deploy`
 - Leave everything else default → **Save and Deploy**. If the repo has no buildable frontend/`wrangler.toml` yet, this first build fails — that's expected pre-M1; re-run it once M1 lands.
 
+**E1a — Disable Workers Builds' Git auto-deploy.** `[AMENDED 2026-07-23 (M9)]` **Required, and found the hard way:** leaving "Connect to Git" active means Cloudflare deploys straight to production on every `git push` to `main`, with zero review — confirmed happening in practice for M6/M7/M8 (each push landed as a live production deployment within seconds, all of them broken, since production D1 never had migrations applied). This completely bypasses the required-reviewer gate in A4/§7.1 step 4; GitHub Actions (M9) is the only deploy path from here on.
+Click into the `scattered-oaks-farms` project → **Settings** → **Build** → find the Git connection/auto-deploy trigger → disable automatic deployments on push (or fully disconnect the GitHub connection, whichever the current dashboard offers — Cloudflare's Workers Builds settings UI has moved around before, see the E2 note above for a precedent). The project stays connected for E2's custom-domain binding either way; only the build-on-push trigger needs to go.
+
 **E2 (#13) — Bind the custom domain.** `[AMENDED 2026-07-21]` Cloudflare added a dedicated **Domains** tab directly on the Worker project's top ribbon (May 2026 update) — it's not nested under Settings.
 Click into the `scattered-oaks-farms` project → click the **Domains** tab (top ribbon, left of Settings) → **Add** (or **+ Add domain**) → enter `scattered-oaks-zebu.com` (bare domain, no `https://`, no `www`) → confirm. Since the zone is already in this same Cloudflare account (Phase C), the DNS record and SSL certificate are provisioned automatically.
 
@@ -131,7 +134,9 @@ Cloudflare dashboard → **Turnstile** → **Add widget**.
 - **Create**
 → Copy the **Site Key** (public — goes into the frontend contact-form component in M7) and the **Secret Key** (goes into a GitHub secret in Phase H, then a Worker secret — see the note on secret handling in Phase H1).
 
-**Preview-domain hostname deferred.** The original plan was to also authorize the `*.pages.dev` preview domain so the contact form works on PR previews, but Turnstile requires exact FQDNs with no wildcards, and the real preview URL pattern for `scattered-oaks-farms` (now on Cloudflare's unified Workers Builds model, not classic Pages) isn't known until a real preview deployment exists post-M1. Come back and add that specific hostname to this widget once you see an actual preview URL.
+**Preview-domain hostname deferred — and now, deliberately, indefinitely.** `[AMENDED 2026-07-23 (M9)]` The original plan was to authorize the `*.pages.dev`/preview-URL hostname so the contact form works on PR previews, but M9's `preview-deploy` CI job intentionally never sets `PUBLIC_TURNSTILE_SITE_KEY` at build time — `src/lib/turnstile.ts` falls back to Cloudflare's published always-pass dummy sitekey instead. That sidesteps needing to register every ephemeral preview URL as a Turnstile hostname at all; no action needed here unless a stable, permanent preview domain is ever adopted.
+
+**Site key delivery changed.** `[AMENDED 2026-07-23 (M9)]` SDD.md §10.2 item 14 originally had the Site Key set as a Cloudflare Workers Builds build-time environment variable (Worker project → Settings → Build → Variables). Since E1a disables Workers Builds' auto-deploy, that delivery path no longer runs at all — GitHub Actions builds the site now. Instead, add a GitHub Actions repository **Variable** (Settings → Secrets and variables → Actions → **Variables** tab, not Secrets — this value is public): name `PUBLIC_TURNSTILE_SITE_KEY`, value `0x4AAAAAAD6H-O_yKg6fVzMc`. The `deploy` (production) job reads it at build time; the `preview-deploy` job deliberately does not, per the paragraph above.
 
 ---
 
@@ -169,19 +174,20 @@ Pick a password meeting the site's own policy (`Requirements.md` §7.2.4: 8+ cha
 | `TURNSTILE_SECRET_KEY` | Phase F1 |
 | `ROOT_ADMIN_BOOTSTRAP_PASSWORD` | Phase H1 |
 
-**H3 (#15) — Push secrets to the Cloudflare Worker.** Needs code (M1+). Confirmed 2026-07-21 by trying it early: running `wrangler secret put RESEND_API_KEY --env production` against this repo (before `wrangler.toml` exists) fails with `No environment found in configuration with name "production"` and `Required Worker name missing`. Wrangler needs a local `wrangler.toml` defining the Worker's name and its named environments before `--env` means anything — the Worker existing *remotely* in Cloudflare isn't sufficient. Wait for M1's `wrangler.toml` (with `[env.production]`/`[env.preview]` sections) rather than working around it with a bare `--name` flag, which would target the wrong scope and likely need redoing anyway. Preview vs. production is a named-environment flag on the same Worker project (see `SDD.md` §2.2's 2026-07-21 amendment), not two separately-named Workers.
-```
+**H3 (#15) — Push secrets to the Cloudflare Worker.** `[AMENDED 2026-07-23 (M9)]` **Now automated — nothing to do here by hand.** The `deploy` job in `.github/workflows/ci.yml` runs `wrangler secret put` for `RESEND_API_KEY`/`TURNSTILE_SECRET_KEY` from the GitHub secret values (H2) on every production deploy — idempotent, so it can never drift from what's in GitHub. This also corrects a real bug the original manual commands had: `wrangler.toml`'s production config is the **top-level/default** environment (no `[env.production]` section exists — see its own header comment), so `wrangler secret put RESEND_API_KEY --env production` as originally written here would fail with "No environment found in configuration with name production." CI runs the production pushes with no `--env` flag and the preview equivalent (`--env preview`) only if a preview Worker secret is ever needed (not currently — preview uses Turnstile's dummy test secret key, which needs no `wrangler secret put` at all).
+~~```
 wrangler secret put RESEND_API_KEY --env production
 wrangler secret put RESEND_API_KEY --env preview
 wrangler secret put TURNSTILE_SECRET_KEY --env production
 wrangler secret put TURNSTILE_SECRET_KEY --env preview
-```
-Each command prompts you to paste the value interactively — nothing is typed on the command line or saved to shell history.
+```~~ *(superseded — do not run these by hand; CI does the production pushes now)*
 
 ---
 
 ## Phase I — Root Administrator
 *(SDD #19 — after the first successful production deploy, i.e. after Development-Plan.md M11)*
+
+`[AMENDED 2026-07-23 (M9)]` The production Root account itself is now also created automatically — `scripts/seed-root-admin.ts` runs as a step in the `deploy` CI job, hashing `ROOT_ADMIN_BOOTSTRAP_PASSWORD` (H1/H2) with the real production password-hashing code and inserting the row (idempotent — a no-op on every deploy after the first). Username `Root`, email `nate.dibling@gmail.com`, `force_password_change=1`. Nothing to do here manually before I1.
 
 **I1 (#19) — First login and password rotation.**
 1. Go to `https://scattered-oaks-zebu.com/admin/login`.
@@ -211,6 +217,8 @@ Each command prompts you to paste the value interactively — nothing is typed o
 | G1 | 16 | Resend account |
 | G2 | 17 | Resend domain verified |
 | G3 | 18 | Resend API key |
+| E1a | — | Workers Builds auto-deploy disabled `[ADDED M9]` |
 | H2 | 5 | GitHub secrets added |
-| H3 | 15 | Worker secrets pushed |
+| H3 | 15 | Worker secrets pushed — automated via CI `[AMENDED M9]` |
+| — | — | GitHub Actions variable `PUBLIC_TURNSTILE_SITE_KEY` added `[ADDED M9]` |
 | I1 | 19 | Root login + rotation |
