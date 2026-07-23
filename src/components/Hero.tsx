@@ -128,6 +128,19 @@ export default function Hero({ content }: Props) {
           animation: bob 4s ease-in-out infinite;
           box-shadow: var(--shadow-badge);
         }
+
+        /* [ADDED] — .hero-inner's two fixed-minimum grid tracks (280px + 320px + gap)
+           need 650px+ combined, well past a phone viewport, forcing the whole page
+           to overflow horizontally. Stack to one column below tablet width. */
+        @media (max-width: 768px) {
+          .hero {
+            padding: 60px 20px 56px;
+          }
+          .hero-inner {
+            grid-template-columns: 1fr;
+            gap: 32px;
+          }
+        }
       `}</style>
     </section>
   );

@@ -313,6 +313,21 @@ export default function AnimalDetailModal({
           font-style: italic;
           padding: 10px 0;
         }
+
+        /* [ADDED] — .modal-dialog's two fixed-minimum grid tracks (280px + 260px)
+           need 540px+ combined, which overflows a phone viewport even though the
+           dialog itself is width: 100%. Stack to one column below tablet width. */
+        @media (max-width: 768px) {
+          .modal-overlay {
+            padding: 12px;
+          }
+          .modal-dialog {
+            grid-template-columns: 1fr;
+          }
+          .modal-media-pane {
+            min-height: 240px;
+          }
+        }
       `}</style>
     </div>
   );

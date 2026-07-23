@@ -88,7 +88,9 @@ export default function AnimalGrid({
         }
         .animals-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+          /* min(270px, 100%) keeps the smallest phones (~320px, minus padding)
+             from overflowing — a bare 270px minimum doesn't fit there. */
+          grid-template-columns: repeat(auto-fit, minmax(min(270px, 100%), 1fr));
           gap: 26px;
         }
       `}</style>

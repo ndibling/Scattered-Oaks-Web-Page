@@ -88,11 +88,12 @@ export default function GallerySection({ content, photos, galleryStyle, onOpenPh
         }
         .gallery-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          /* min(220px, 100%) — same overflow guard as AnimalGrid's .animals-grid. */
+          grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
           gap: 16px;
         }
         .gallery-grid-mosaic {
-          grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+          grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr));
         }
         .gallery-tile {
           aspect-ratio: 1 / 1;

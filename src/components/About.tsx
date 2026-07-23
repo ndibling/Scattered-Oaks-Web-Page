@@ -101,6 +101,18 @@ export default function About({ content }: Props) {
           font-size: 13px;
           color: var(--color-text-muted);
         }
+
+        /* [ADDED] — same fixed-minimum-track overflow as Hero's .hero-inner
+           (280px + 320px + gap exceeds a phone viewport). Stack below tablet width. */
+        @media (max-width: 768px) {
+          .about {
+            padding: 56px 20px;
+          }
+          .about-inner {
+            grid-template-columns: 1fr;
+            gap: 32px;
+          }
+        }
       `}</style>
     </section>
   );
