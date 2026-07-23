@@ -91,6 +91,24 @@ describe('POST /api/admin/gallery', () => {
     expect(res.status).toBe(400);
   });
 
+  it('rejects an image over the 10MB size limit', async () => {
+    const oversized = new Uint8Array(10 * 1024 * 1024 + 1);
+    const form = new FormData();
+    form.set('file', new File([oversized], 'huge.jpg', { type: 'image/jpeg' }));
+    form.set('label', 'Too Big');
+    const res = await worker.fetch(
+      new Request('http://example.com/api/admin/gallery', {
+        method: 'POST',
+        headers: { cookie },
+        body: form,
+      }),
+      env,
+    );
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toMatch(/exceeds the 10MB limit/);
+  });
+
   it('uploads to R2 and creates a gallery_photos row, and audit-logs it', async () => {
     const photo = await createPhoto(cookie, 'Barn Sunset');
     try {
@@ -169,5 +187,10 @@ describe('PUT /api/admin/gallery/reorder', () => {
     } finally {
       await env.DB.prepare('DELETE FROM gallery_photos WHERE id IN (?, ?)').bind(a.id, b.id).run();
     }
+  });
+
+  it('rejects an empty order array', async () => {
+    const res = await req('PUT', '/api/admin/gallery/reorder', cookie, { order: [] });
+    expect(res.status).toBe(400);
   });
 });

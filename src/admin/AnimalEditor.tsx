@@ -273,7 +273,7 @@ export default function AnimalEditor() {
                   {m.media_type === 'video' ? (
                     <video src={m.url} controls />
                   ) : (
-                    <img src={m.url} alt="" />
+                    <img src={m.url} alt={`${detail.name} photo`} loading="lazy" />
                   )}
                   <button type="button" onClick={() => handleDeleteMedia(m.id)}>
                     Remove
@@ -330,13 +330,19 @@ export default function AnimalEditor() {
                 <td>{animal.name}</td>
                 <td>{animal.status}</td>
                 <td class="animal-editor-order-cell">
-                  <button type="button" disabled={i === 0} onClick={() => move(i, -1)}>
+                  <button
+                    type="button"
+                    disabled={i === 0}
+                    onClick={() => move(i, -1)}
+                    aria-label={`Move ${animal.name} up`}
+                  >
                     &uarr;
                   </button>
                   <button
                     type="button"
                     disabled={i === animals.length - 1}
                     onClick={() => move(i, 1)}
+                    aria-label={`Move ${animal.name} down`}
                   >
                     &darr;
                   </button>

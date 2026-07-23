@@ -68,7 +68,7 @@ export default function ContentEditor() {
           IMAGE_CONTENT_KEYS.has(key) ? (
             <div key={key} class="content-editor-row content-editor-row-image">
               <div class="content-editor-key">{key}</div>
-              <img src={content[key]} alt="" class="content-editor-preview" />
+              <img src={content[key]} alt="" class="content-editor-preview" loading="lazy" />
               <FileDropZone
                 accept="image/*"
                 label={savingKey === key ? 'Uploading…' : 'Click or drag a replacement photo here'}

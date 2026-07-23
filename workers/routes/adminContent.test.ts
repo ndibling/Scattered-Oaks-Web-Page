@@ -114,6 +114,23 @@ describe('PUT /api/admin/content/:key', () => {
     expect(res.status).toBe(400);
   });
 
+  it('rejects an image over the 10MB size limit', async () => {
+    const oversized = new Uint8Array(10 * 1024 * 1024 + 1);
+    const form = new FormData();
+    form.set('file', new File([oversized], 'huge.jpg', { type: 'image/jpeg' }));
+    const res = await worker.fetch(
+      new Request('http://example.com/api/admin/content/hero.photo_url', {
+        method: 'PUT',
+        headers: { cookie },
+        body: form,
+      }),
+      env,
+    );
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error: string };
+    expect(body.error).toMatch(/exceeds the 10MB limit/);
+  });
+
   it('replaces an image-backed key via multipart upload and deletes the old R2 object', async () => {
     const form1 = new FormData();
     form1.set('file', new File([new Uint8Array([1, 2, 3])], 'v1.jpg', { type: 'image/jpeg' }));

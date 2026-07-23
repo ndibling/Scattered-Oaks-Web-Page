@@ -19,13 +19,16 @@ export default function AnimalCard({ animal, showPublicPrices, onOpen, onAskAbou
       role="button"
       tabIndex={0}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') onOpen(animal.id);
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onOpen(animal.id);
+        }
       }}
       aria-label={`View details for ${animal.name}`}
     >
       <div class="card-photo">
         {animal.primary_image_url ? (
-          <img src={animal.primary_image_url} alt={animal.name} />
+          <img src={animal.primary_image_url} alt={animal.name} loading="lazy" />
         ) : (
           <div class="card-photo-placeholder">PHOTO: {animal.name}</div>
         )}

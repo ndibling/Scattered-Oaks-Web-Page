@@ -102,7 +102,7 @@ export default function GalleryEditor() {
         <div class="gallery-editor-grid">
           {photos.map((photo, i) => (
             <div key={photo.id} class="gallery-editor-item">
-              <img src={photo.url} alt={photo.label} />
+              <img src={photo.url} alt={photo.label} loading="lazy" />
               {editingId === photo.id ? (
                 <div class="gallery-editor-edit-form">
                   <input
@@ -127,13 +127,19 @@ export default function GalleryEditor() {
                 <>
                   <div class="gallery-editor-item-label">{photo.label}</div>
                   <div class="gallery-editor-item-actions">
-                    <button type="button" disabled={i === 0} onClick={() => move(i, -1)}>
+                    <button
+                      type="button"
+                      disabled={i === 0}
+                      onClick={() => move(i, -1)}
+                      aria-label={`Move ${photo.label} up`}
+                    >
                       &uarr;
                     </button>
                     <button
                       type="button"
                       disabled={i === photos.length - 1}
                       onClick={() => move(i, 1)}
+                      aria-label={`Move ${photo.label} down`}
                     >
                       &darr;
                     </button>

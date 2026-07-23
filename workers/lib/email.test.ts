@@ -45,4 +45,14 @@ describe('sendEmail', () => {
     ).resolves.toBeUndefined();
     expect(errorSpy).toHaveBeenCalled();
   });
+
+  it('logs and does not throw when fetch rejects with a non-Error value', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue('connection reset'));
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await expect(
+      sendEmail('test-key', { to: 'someone@example.com', subject: 'Test', html: '<p>hi</p>' }),
+    ).resolves.toBeUndefined();
+    expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('connection reset'));
+  });
 });

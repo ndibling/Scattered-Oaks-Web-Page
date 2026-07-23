@@ -37,11 +37,14 @@ export default function GallerySection({ content, photos, galleryStyle, onOpenPh
               role="button"
               tabIndex={0}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') onOpenPhoto(photo);
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onOpenPhoto(photo);
+                }
               }}
               aria-label={`View photo: ${photo.label}`}
             >
-              <img src={photo.url} alt={photo.label} />
+              <img src={photo.url} alt={photo.label} loading="lazy" />
               <div class="gallery-tile-label">{photo.label}</div>
             </div>
           ))}

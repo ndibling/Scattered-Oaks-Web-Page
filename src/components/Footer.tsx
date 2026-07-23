@@ -14,6 +14,7 @@ export default function Footer({ content }: Props) {
             src={content['site.logo_url'] ?? '/uploads/Scattered Oaks Logo-eb6f247a.png'}
             alt=""
             class="footer-logo"
+            loading="lazy"
           />
           <div>
             <div class="footer-name">{content['site.farm_name']}</div>

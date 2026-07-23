@@ -18,6 +18,7 @@ export default function About({ content }: Props) {
           <img
             src={content['about.photo_url'] ?? '/uploads/Scattered Oaks Farm.jpg'}
             alt="Evening at Scattered Oaks Farms"
+            loading="lazy"
           />
         </div>
         <div>

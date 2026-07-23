@@ -28,7 +28,7 @@ export default function GalleryLightbox({ photo, onClose }: Props) {
     >
       <div class="lightbox-dialog" ref={dialogRef} onClick={(e) => e.stopPropagation()}>
         <div class="lightbox-media-pane">
-          <img src={photo.url} alt={photo.label} />
+          <img src={photo.url} alt={photo.label} loading="lazy" />
           <button type="button" class="lightbox-close-btn" onClick={onClose} aria-label="Close">
             &times;
           </button>

@@ -26,6 +26,10 @@ export function computeResizedDimensions(
   return { width: Math.round(width * scale), height: Math.round(height * scale) };
 }
 
+/* istanbul ignore next -- requires real browser canvas/createImageBitmap
+ * APIs; this repo has no jsdom/DOM test harness for src/**\/*.tsx or
+ * DOM-dependent src/lib files. Verified instead via
+ * e2e/admin-flow.spec.ts's large-image upload + natural-width assertion. */
 export async function resizeImageFile(
   file: File,
   maxDimension: number = MAX_DIMENSION,

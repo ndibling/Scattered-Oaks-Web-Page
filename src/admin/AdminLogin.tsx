@@ -5,11 +5,21 @@ type Props = {
   onLoggedIn: () => void;
 };
 
+// [AMENDED] 2026-07-23 (M8) — added a 'forgot' mode. api.requestPasswordReset()
+// existed since M7 but nothing in the UI called it, so the password-reset
+// flow (SDD §6.3) had no way in from the browser. Same single-shared-<style>/
+// conditional-content pattern AdminResetPassword.tsx uses for its `done` state.
 export default function AdminLogin({ onLoggedIn }: Props) {
+  const [mode, setMode] = useState<'login' | 'forgot'>('login');
+
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
+  const [resetSubmitting, setResetSubmitting] = useState(false);
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
@@ -25,35 +35,85 @@ export default function AdminLogin({ onLoggedIn }: Props) {
     }
   }
 
+  async function handleForgotSubmit(e: Event) {
+    e.preventDefault();
+    setResetSubmitting(true);
+    try {
+      const { message } = await api.requestPasswordReset(resetEmail);
+      setResetMessage(message);
+    } catch (err) {
+      setResetMessage(err instanceof Error ? err.message : 'Could not send a reset link.');
+    } finally {
+      setResetSubmitting(false);
+    }
+  }
+
+  function backToLogin() {
+    setMode('login');
+    setResetEmail('');
+    setResetMessage(null);
+  }
+
   return (
     <div class="admin-login-shell">
-      <form class="admin-login-form" onSubmit={handleSubmit}>
-        <h1 class="admin-login-heading">Scattered Oaks Admin</h1>
-        {error && <div class="admin-login-error">{error}</div>}
-        <div class="admin-login-field">
-          <label for="admin-login-username">Username</label>
-          <input
-            id="admin-login-username"
-            type="text"
-            required
-            value={username}
-            onInput={(e) => setUsername((e.target as HTMLInputElement).value)}
-          />
-        </div>
-        <div class="admin-login-field">
-          <label for="admin-login-password">Password</label>
-          <input
-            id="admin-login-password"
-            type="password"
-            required
-            value={password}
-            onInput={(e) => setPassword((e.target as HTMLInputElement).value)}
-          />
-        </div>
-        <button type="submit" class="admin-login-submit" disabled={submitting}>
-          {submitting ? 'Signing in…' : 'Sign In'}
-        </button>
-      </form>
+      {mode === 'login' ? (
+        <form class="admin-login-form" onSubmit={handleSubmit}>
+          <h1 class="admin-login-heading">Scattered Oaks Admin</h1>
+          {error && <div class="admin-login-error">{error}</div>}
+          <div class="admin-login-field">
+            <label for="admin-login-username">Username</label>
+            <input
+              id="admin-login-username"
+              type="text"
+              required
+              value={username}
+              onInput={(e) => setUsername((e.target as HTMLInputElement).value)}
+            />
+          </div>
+          <div class="admin-login-field">
+            <label for="admin-login-password">Password</label>
+            <input
+              id="admin-login-password"
+              type="password"
+              required
+              value={password}
+              onInput={(e) => setPassword((e.target as HTMLInputElement).value)}
+            />
+          </div>
+          <button type="submit" class="admin-login-submit" disabled={submitting}>
+            {submitting ? 'Signing in…' : 'Sign In'}
+          </button>
+          <button type="button" class="admin-login-forgot-link" onClick={() => setMode('forgot')}>
+            Forgot password?
+          </button>
+        </form>
+      ) : (
+        <form class="admin-login-form" onSubmit={handleForgotSubmit}>
+          <h1 class="admin-login-heading">Reset Your Password</h1>
+          {resetMessage ? (
+            <div class="admin-login-forgot-message">{resetMessage}</div>
+          ) : (
+            <div class="admin-login-field">
+              <label for="admin-login-forgot-email">Email</label>
+              <input
+                id="admin-login-forgot-email"
+                type="email"
+                required
+                value={resetEmail}
+                onInput={(e) => setResetEmail((e.target as HTMLInputElement).value)}
+              />
+            </div>
+          )}
+          {!resetMessage && (
+            <button type="submit" class="admin-login-submit" disabled={resetSubmitting}>
+              {resetSubmitting ? 'Sending…' : 'Send Reset Link'}
+            </button>
+          )}
+          <button type="button" class="admin-login-forgot-link" onClick={backToLogin}>
+            Back to login
+          </button>
+        </form>
+      )}
 
       <style>{`
         .admin-login-shell {
@@ -90,6 +150,14 @@ export default function AdminLogin({ onLoggedIn }: Props) {
           padding: 10px 12px;
           font-size: 14px;
         }
+        .admin-login-forgot-message {
+          background: var(--color-surface-alt);
+          color: var(--color-text-body);
+          border-radius: var(--radius-input);
+          padding: 10px 12px;
+          font-size: 14px;
+          text-align: center;
+        }
         .admin-login-field label {
           display: block;
           font-family: var(--font-heading);
@@ -122,6 +190,15 @@ export default function AdminLogin({ onLoggedIn }: Props) {
         .admin-login-submit:disabled {
           opacity: 0.6;
           cursor: default;
+        }
+        .admin-login-forgot-link {
+          background: none;
+          border: none;
+          color: var(--color-accent);
+          font-size: 13px;
+          cursor: pointer;
+          padding: 0;
+          text-align: center;
         }
       `}</style>
     </div>

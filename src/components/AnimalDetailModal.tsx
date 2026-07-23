@@ -55,7 +55,7 @@ export default function AnimalDetailModal({
           {current?.media_type === 'video' ? (
             <video key={current.url} src={current.url} controls playsInline preload="auto" />
           ) : current ? (
-            <img src={current.url} alt={animal.name} />
+            <img src={current.url} alt={animal.name} loading="lazy" />
           ) : (
             <div class="modal-no-photo">No photo available</div>
           )}
