@@ -17,7 +17,7 @@ export default function About({ content }: Props) {
           {/* [AMENDED] 2026-07-22 (M6) — reads site_content['about.photo_url'], admin-replaceable via ContentEditor. */}
           <img
             src={content['about.photo_url'] ?? '/uploads/Scattered Oaks Farm.jpg'}
-            alt="Evening at Scattered Oaks Farms"
+            alt="Evening at Scattered Oaks Farm"
             loading="lazy"
           />
         </div>

@@ -204,7 +204,7 @@ auth.post('/forgot-password', async (c) => {
       const resetUrl = `https://scattered-oaks-zebu.com/admin/reset-password?token=${token}`;
       await sendEmail(c.env.RESEND_API_KEY, {
         to: email,
-        subject: 'Reset your Scattered Oaks Farms admin password',
+        subject: 'Reset your Scattered Oaks Farm admin password',
         html: `<p>A password reset was requested for this account.</p><p><a href="${resetUrl}">Reset your password</a></p><p>This link expires shortly. If you didn't request this, you can ignore this email.</p>`,
       });
     }

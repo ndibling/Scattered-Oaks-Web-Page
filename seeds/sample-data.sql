@@ -60,7 +60,7 @@ INSERT OR REPLACE INTO site_settings (key, value) VALUES
 -- Editable site text (Requirements.md §7.2.1: headline, About copy, stat
 -- labels, form labels, etc.), sourced from design-reference's hardcoded copy.
 INSERT OR REPLACE INTO site_content (key, value_text) VALUES
-  ('site.farm_name', 'Scattered Oaks Farms'),
+  ('site.farm_name', 'Scattered Oaks Farm'),
   ('site.dba_line', 'A DBA of Heather Johnston — hello@scatteredoaksfarms.com'),
   -- [ADDED] 2026-07-22 (M6) — Hero/About photos and the farm logo were
   -- hardcoded <img src> paths in Hero.tsx/Header.tsx/About.tsx with no
@@ -83,8 +83,8 @@ INSERT OR REPLACE INTO site_content (key, value_text) VALUES
   ('hero.cta_secondary', 'Our Story'),
   ('hero.badge', '38 head strong'),
   ('about.eyebrow', 'About the Farm'),
-  ('about.heading', 'Scattered Oaks Farms'),
-  ('about.paragraph_1', 'Scattered Oaks Farms is a DBA of Heather Johnston, run out of a sun-warmed patch of Bradenton, Florida pasture where the oaks are wide, the palms lean sideways, and the cattle are miniature. What started as two zebu and a dream has grown into a herd of 38 — 35 cows and 3 bulls — each one unique, with their own personality, and more than a little spoiled.'),
+  ('about.heading', 'Scattered Oaks Farm'),
+  ('about.paragraph_1', 'Scattered Oaks Farm is a DBA of Heather Johnston, run out of a sun-warmed patch of Bradenton, Florida pasture where the oaks are wide, the palms lean sideways, and the cattle are miniature. What started as two zebu and a dream has grown into a herd of 38 — 35 cows and 3 bulls — each one unique, with their own personality, and more than a little spoiled.'),
   ('about.paragraph_2', 'We fell for miniature zebu because they''re gentle enough for a front porch and hardy enough for the heat. Every animal here is raised on pasture, handled daily, and treated like family — which is exactly how we hope they''ll be treated wherever they land next.'),
   ('about.stat_1_value', '35'),
   ('about.stat_1_label', 'Cows & Calves'),

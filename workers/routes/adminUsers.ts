@@ -82,7 +82,7 @@ adminUsers.post('/', auditLog('user.create', 'admin'), async (c) => {
   // authenticated, admin-only endpoint.
   await sendEmail(c.env.RESEND_API_KEY, {
     to: email,
-    subject: 'Your Scattered Oaks Farms admin account',
+    subject: 'Your Scattered Oaks Farm admin account',
     html: `<p>An administrator account was created for you, username <strong>${username}</strong>.</p><p>Temporary password: <strong>${tempPassword}</strong></p><p>Sign in at <a href="https://scattered-oaks-zebu.com/admin">the admin panel</a> — you'll be required to set a new password on first login.</p>`,
   });
 
