@@ -5,7 +5,7 @@ type Props = {
 };
 
 export default function Header({ content }: Props) {
-  const farmName = content['site.farm_name'] ?? 'Scattered Oaks Farms';
+  const farmName = content['site.farm_name'] ?? 'Scattered Oaks Farm';
   const words = farmName.split(' ');
   const lastWord = words.pop();
   const rest = words.join(' ');

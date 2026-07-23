@@ -5,7 +5,7 @@
 // contact request into a 500. mail.scattered-oaks-zebu.com is the confirmed
 // verified sending domain (Manual-Setup-Guide.md Phase G).
 const RESEND_API_URL = 'https://api.resend.com/emails';
-const FROM_ADDRESS = 'Scattered Oaks Farms <noreply@mail.scattered-oaks-zebu.com>';
+const FROM_ADDRESS = 'Scattered Oaks Farm <noreply@mail.scattered-oaks-zebu.com>';
 
 export async function sendEmail(
   apiKey: string,
